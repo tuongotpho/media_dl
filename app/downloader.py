@@ -149,19 +149,38 @@ class YTDLPManager:
                 'no_warnings': True,
             }
 
+            # Check for ffmpeg via imageio_ffmpeg or system PATH
+            ffmpeg_path = None
+            try:
+                import imageio_ffmpeg
+                ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+            except ImportError:
+                import shutil
+                ffmpeg_path = shutil.which('ffmpeg')
+
+            if ffmpeg_path:
+                ydl_opts['ffmpeg_location'] = ffmpeg_path
+
             if is_audio:
-                ydl_opts.update({
-                    'format': 'bestaudio/best',
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'mp3',
-                        'preferredquality': '192',
-                    }],
-                })
+                if ffmpeg_path:
+                    ydl_opts.update({
+                        'format': 'bestaudio/best',
+                        'postprocessors': [{
+                            'key': 'FFmpegExtractAudio',
+                            'preferredcodec': 'mp3',
+                            'preferredquality': '192',
+                        }],
+                    })
+                else:
+                    # Download native audio stream if ffmpeg is missing
+                    ydl_opts['format'] = 'bestaudio/best'
             else:
-                # Merge video + best audio if available
-                ydl_opts['format'] = f"{format_id}+bestaudio/best" if format_id != 'best' else 'bestvideo+bestaudio/best'
-                ydl_opts['merge_output_format'] = 'mp4'
+                if ffmpeg_path:
+                    ydl_opts['format'] = f"{format_id}+bestaudio/best" if format_id != 'best' else 'bestvideo+bestaudio/best'
+                    ydl_opts['merge_output_format'] = 'mp4'
+                else:
+                    # Fallback to single stream (video + audio combined in one file) if ffmpeg missing
+                    ydl_opts['format'] = 'best'
 
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -169,15 +188,15 @@ class YTDLPManager:
                     if info:
                         download_tasks[task_id]['title'] = info.get('title', 'Video')
             except Exception as e:
-                # Fallback format if merge fails or single format is required
-                if not is_audio:
-                    try:
-                        ydl_opts['format'] = 'best'
-                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                            ydl.download([url])
-                        return
-                    except Exception as err:
-                        e = err
+                # Retry with simplest single stream format
+                try:
+                    ydl_opts['format'] = 'best'
+                    ydl_opts.pop('merge_output_format', None)
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        ydl.download([url])
+                    return
+                except Exception as err:
+                    e = err
                 download_tasks[task_id].update({
                     'status': 'error',
                     'error': str(e)
