@@ -14,3 +14,8 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+
+# Temporary video test files
+*.part
+*.ytdl
+test_4k*
