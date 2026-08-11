@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Downloads folder (don't push downloaded videos to git)
+app/downloads/*
+!app/downloads/.gitkeep
+
+# Environments & IDE
+.venv/
+env/
+venv/
+.vscode/
+.idea/
+.DS_Store

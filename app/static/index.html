@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YTDLP Studio - Ultra Video Downloader</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="navbar">
+            <div class="logo">
+                <i class="fa-solid fa-circle-play logo-icon"></i>
+                <span class="logo-text">YTDLP <span class="highlight">Studio</span></span>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>Python Engine Ready</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Search Section -->
+            <section class="search-section">
+                <h1 class="hero-title">Tải Video & Âm Thanh <br><span class="gradient-text">Tốc Độ Cao</span></h1>
+                <p class="hero-subtitle">Hỗ trợ YouTube, TikTok, Facebook, Twitter và hơn 1.000+ nền tảng khác.</p>
+                
+                <form id="search-form" class="search-box">
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-link input-icon"></i>
+                        <input type="url" id="video-url" placeholder="Dán đường dẫn video tại đây (YouTube, TikTok, FB...)" required autocomplete="off">
+                        <button type="button" id="btn-paste" class="btn-icon-secondary" title="Dán từ Clipboard">
+                            <i class="fa-regular fa-paste"></i>
+                        </button>
+                    </div>
+                    <button type="submit" id="btn-analyze" class="btn-primary">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Phân Tích</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div id="loading-state" class="card loading-card hidden">
+                <div class="spinner"></div>
+                <p class="loading-text">Đang trích xuất dữ liệu video từ yt-dlp...</p>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="error-banner" class="error-card hidden">
+                <i class="fa-solid fa-circle-exclamation error-icon"></i>
+                <div class="error-content">
+                    <h4>Có lỗi xảy ra</h4>
+                    <p id="error-message">Không thể lấy thông tin video.</p>
+                </div>
+            </div>
+
+            <!-- Video Preview & Format Selection Card -->
+            <section id="preview-section" class="card preview-card hidden">
+                <div class="preview-header">
+                    <div class="thumbnail-wrapper">
+                        <img id="video-thumb" src="" alt="Thumbnail">
+                        <span id="video-duration" class="duration-badge">00:00</span>
+                    </div>
+                    <div class="video-details">
+                        <span id="video-uploader" class="uploader-tag"><i class="fa-regular fa-user"></i> Uploader</span>
+                        <h2 id="video-title" class="video-title">Title placeholder</h2>
+                        <div class="meta-info">
+                            <span><i class="fa-regular fa-eye"></i> <span id="video-views">0</span> lượt xem</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="format-selection">
+                    <h3><i class="fa-solid fa-sliders"></i> Chọn Định Dạng Tải Về</h3>
+                    
+                    <div class="tabs-header">
+                        <button type="button" class="tab-btn active" data-tab="video-tab">
+                            <i class="fa-solid fa-video"></i> Video chất lượng cao
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="audio-tab">
+                            <i class="fa-solid fa-music"></i> Âm thanh MP3
+                        </button>
+                    </div>
+
+                    <div class="tabs-content">
+                        <!-- Video Formats List -->
+                        <div id="video-tab" class="tab-pane active">
+                            <div class="format-grid" id="video-format-list">
+                                <!-- Format items injected via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Audio Formats List -->
+                        <div id="audio-tab" class="tab-pane">
+                            <div class="format-grid" id="audio-format-list">
+                                <!-- Audio items injected via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-footer">
+                        <button type="button" id="btn-download-selected" class="btn-success">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                            <span>Bắt Đầu Tải Về</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Active Downloads Progress Section -->
+            <section id="downloads-section" class="card downloads-card hidden">
+                <div class="card-header">
+                    <h3><i class="fa-solid fa-spinner fa-spin"></i> Tiến Trình Tải Trực Tiếp</h3>
+                    <span id="download-status-badge" class="badge badge-info">Đang tải...</span>
+                </div>
+
+                <div class="download-item">
+                    <div class="download-info">
+                        <h4 id="dl-title" class="dl-title">Đang tải video...</h4>
+                        <div class="dl-stats">
+                            <span id="dl-speed"><i class="fa-solid fa-gauge-high"></i> 0 MB/s</span>
+                            <span id="dl-downloaded"><i class="fa-solid fa-hard-drive"></i> 0 MB / 0 MB</span>
+                            <span id="dl-eta"><i class="fa-regular fa-clock"></i> ETA: --</span>
+                        </div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="progress-percent-wrapper">
+                        <span id="dl-percent" class="dl-percent">0%</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Library Section -->
+            <section class="card history-card">
+                <div class="card-header">
+                    <h3><i class="fa-solid fa-folder-open"></i> Thư viện file đã tải</h3>
+                    <button type="button" id="btn-open-folder" class="btn-outline">
+                        <i class="fa-solid fa-folder-show"></i>
+                        <span>Mở Thư Mục Downloads</span>
+                    </button>
+                </div>
+
+                <div class="history-list" id="history-list">
+                    <!-- Injected via JS -->
+                    <div class="empty-state">
+                        <i class="fa-solid fa-box-open empty-icon"></i>
+                        <p>Chưa có file nào được tải về trong thư mục.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by <strong>yt-dlp Engine</strong> & <strong>FastAPI Python</strong></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
