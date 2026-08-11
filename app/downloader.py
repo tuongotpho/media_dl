@@ -68,9 +68,9 @@ class YTDLPManager:
                 if res_str not in seen_resolutions:
                     seen_resolutions.add(res_str)
                     formats_list.append({
-                        'format_id': f['format_id'],
-                        'ext': ext,
-                        'note': f"Video {res_str} ({ext})",
+                        'format_id': f"bestvideo[height<={height}]+bestaudio/best",
+                        'ext': 'mp4',
+                        'note': f"Video {res_str} (Siêu nét)",
                         'resolution': res_str,
                         'is_audio': False
                     })
@@ -176,10 +176,10 @@ class YTDLPManager:
                     ydl_opts['format'] = 'bestaudio/best'
             else:
                 if ffmpeg_path:
-                    ydl_opts['format'] = f"{format_id}+bestaudio/best" if format_id != 'best' else 'bestvideo+bestaudio/best'
+                    ydl_opts['format'] = format_id if '+' in format_id or 'best' in format_id else f"{format_id}+bestaudio/best"
                     ydl_opts['merge_output_format'] = 'mp4'
                 else:
-                    # Fallback to single stream (video + audio combined in one file) if ffmpeg missing
+                    # Fallback to single stream if ffmpeg missing
                     ydl_opts['format'] = 'best'
 
             try:
