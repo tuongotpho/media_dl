@@ -1,3 +1,5 @@
+const DOWNLOAD_URL = "https://github.com/tuongotpho/media_dl/releases/download/v1.0.0/MediaDownloadStudio_v1.0.zip";
+
 document.addEventListener('DOMContentLoaded', () => {
     // Copy STK
     const btnCopyStk = document.getElementById('btn-copy-stk');
