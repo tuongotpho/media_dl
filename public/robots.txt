@@ -1,5 +1,24 @@
-# robots.txt cho Media Download Studio
+# robots.txt va AI Crawlers cho Media Download Studio
 User-agent: *
+Allow: /
+
+# Cho phep cac AI Search Engine & LLM Crawlers truy cap du lieu
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bytespider
 Allow: /
 
 Sitemap: https://media-dl.web.app/sitemap.xml

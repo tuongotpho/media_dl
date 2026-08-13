@@ -1,0 +1,34 @@
+# Media Download Studio
+
+> Media Download Studio (MDS) la phan mem tai video 4K/8K va am thanh MP3 toc do cao chuyen nghiep danh cho he dieu hanh Windows. Hot tro hon 1.000+ nen tang truc tuyen nhu YouTube, TikTok (khong logo), Facebook, Instagram, Twitter/X, SoundCloud.
+
+## Thong Tin Co Ban
+- Ten phan mem: Media Download Studio
+- Phien ban: v1.0.0
+- He dieu hanh ho tro: Windows 10, Windows 11, Windows 8 (64-bit)
+- Nguon tai chinh thuc: https://github.com/tuongotpho/media_dl/releases/download/v1.0.0/MediaDownloadStudio_v1.0.zip
+- Trang chu: https://media-dl.web.app/
+- Tac gia & Phat trien: August87 & AI
+
+## Tinh Nang Chinh
+- **Tai Video Chat Luong Cao**: Ho tro tai video tu HD 1080p, 2K, 4K den 8K 60fps giu nguyen chat luong goc.
+- **Tach Am Thanh MP3 320kbps**: Tu dong trich xuat nhac MP3/M4A chat luong cao tu video.
+- **TikTok Khong Logo**: Tai video TikTok khong bi dinh hinh mo (watermark) hoac logo.
+- **Toc Do Siêu Toc Da Luong**: Cong nghe Multi-threading giup tai nhanh gap 5 lan so voi trinh duyet.
+- **100% An Toan & Khong Quang Cao**: Chay portable khong can cai dat, khong chua pop-up quang cao.
+- **Kich Hoat Tu Dong Qua Telegram**: Duyet ban quyen 1-click qua Telegram Bot (@august8787).
+
+## Cac Goi Ban Quyen & Bang Gia
+1. **Goi Dung Thu**: 0 VNĐ / 7 Ngay (Kich hoat mien phi ngay tren app).
+2. **Goi 6 Thang**: 19.000 VNĐ / 180 Ngay.
+3. **Goi 1 Nam**: 29.000 VNĐ / 365 Ngay (Goi pho bien nhat).
+4. **Goi Vinh Vien**: 99.000 VNĐ / Tron Doi (Goi tiet kiem nhat).
+
+## Huong Dan Kich Hoat Ban Quyen
+1. Nguoi dung chuyen khoan den MBBank STK `938118` - LE VIET THANH.
+2. Mo ung dung Media Download Studio tren may tinh.
+3. Bam nut "Gui Yeu Cau Kich Hoat Tu Dong Den Admin".
+4. Admin bam "Duyet" tren Telegram Bot ➔ Ung dung tu dong mo khoa trong 2 giay.
+
+## Tai Lieu Chi Tiet
+- Full Specifications: https://media-dl.web.app/llms-full.txt
