@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YTDLP Studio - Ultra Video Downloader</title>
+    <title>Media Download Studio - Tải Video & Âm Thanh Chuyên Nghiệp</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,157 +20,425 @@
     </div>
 
     <div class="app-container">
-        <!-- Header -->
+        <!-- Top Navbar -->
         <header class="navbar">
             <div class="logo">
                 <i class="fa-solid fa-circle-play logo-icon"></i>
-                <span class="logo-text">YTDLP <span class="highlight">Studio</span></span>
+                <span class="logo-text">Media <span class="highlight">Studio</span></span>
             </div>
-            <div class="status-badge">
-                <span class="status-dot"></span>
-                <span>Python Engine Ready</span>
+            <div class="navbar-right">
+                <div id="license-badge" class="license-badge unactivated" title="Click để xem thông tin bản quyền">
+                    <i class="fa-solid fa-key"></i>
+                    <span id="license-badge-text">Chưa Kích Hoạt</span>
+                </div>
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>Engine Ready</span>
+                </div>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Hero Search Section -->
-            <section class="search-section">
-                <h1 class="hero-title">Tải Video & Âm Thanh <br><span class="gradient-text">Tốc Độ Cao</span></h1>
-                <p class="hero-subtitle">Hỗ trợ YouTube, TikTok, Facebook, Twitter và hơn 1.000+ nền tảng khác.</p>
-                
-                <form id="search-form" class="search-box">
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-link input-icon"></i>
-                        <input type="url" id="video-url" placeholder="Dán đường dẫn video tại đây (YouTube, TikTok, FB...)" required autocomplete="off">
-                        <button type="button" id="btn-paste" class="btn-icon-secondary" title="Dán từ Clipboard">
-                            <i class="fa-regular fa-paste"></i>
-                        </button>
+        <!-- Main Dashboard Grid Layout -->
+        <div class="dashboard-grid">
+            <!-- Left Primary Column -->
+            <div class="left-workspace">
+                <!-- Search Box Card -->
+                <section class="card search-card">
+                    <div class="search-header">
+                        <h2 class="search-title">Tải Video & Âm Thanh <span class="gradient-text">Tốc Độ Cao</span></h2>
+                        <p class="search-subtitle">Hỗ trợ YouTube, TikTok, Facebook, Twitter & 1.000+ trang web</p>
                     </div>
-                    <button type="submit" id="btn-analyze" class="btn-primary">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Phân Tích</span>
-                    </button>
-                </form>
-            </section>
 
-            <!-- Loading Spinner -->
-            <div id="loading-state" class="card loading-card hidden">
-                <div class="spinner"></div>
-                <p class="loading-text">Đang trích xuất dữ liệu video từ yt-dlp...</p>
-            </div>
-
-            <!-- Error Banner -->
-            <div id="error-banner" class="error-card hidden">
-                <i class="fa-solid fa-circle-exclamation error-icon"></i>
-                <div class="error-content">
-                    <h4>Có lỗi xảy ra</h4>
-                    <p id="error-message">Không thể lấy thông tin video.</p>
-                </div>
-            </div>
-
-            <!-- Video Preview & Format Selection Card -->
-            <section id="preview-section" class="card preview-card hidden">
-                <div class="preview-header">
-                    <div class="thumbnail-wrapper">
-                        <img id="video-thumb" src="" alt="Thumbnail">
-                        <span id="video-duration" class="duration-badge">00:00</span>
-                    </div>
-                    <div class="video-details">
-                        <span id="video-uploader" class="uploader-tag"><i class="fa-regular fa-user"></i> Uploader</span>
-                        <h2 id="video-title" class="video-title">Title placeholder</h2>
-                        <div class="meta-info">
-                            <span><i class="fa-regular fa-eye"></i> <span id="video-views">0</span> lượt xem</span>
+                    <form id="search-form" class="search-box">
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-link input-icon"></i>
+                            <input type="url" id="video-url" placeholder="Dán đường dẫn video tại đây (YouTube, TikTok, FB...)" required autocomplete="off">
+                            <button type="button" id="btn-paste" class="btn-icon-secondary" title="Dán từ Clipboard">
+                                <i class="fa-regular fa-paste"></i>
+                            </button>
                         </div>
+                        <button type="submit" id="btn-analyze" class="btn-primary">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Phân Tích</span>
+                        </button>
+                    </form>
+                </section>
+
+                <!-- Loading State -->
+                <div id="loading-state" class="card loading-card hidden">
+                    <div class="spinner"></div>
+                    <p class="loading-text">Đang phân tích & trích xuất dữ liệu media...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="error-banner" class="error-card hidden">
+                    <i class="fa-solid fa-circle-exclamation error-icon"></i>
+                    <div class="error-content">
+                        <h4>Có lỗi xảy ra</h4>
+                        <p id="error-message">Không thể lấy thông tin video.</p>
                     </div>
                 </div>
 
-                <div class="format-selection">
-                    <h3><i class="fa-solid fa-sliders"></i> Chọn Định Dạng Tải Về</h3>
-                    
-                    <div class="tabs-header">
-                        <button type="button" class="tab-btn active" data-tab="video-tab">
-                            <i class="fa-solid fa-video"></i> Video chất lượng cao
-                        </button>
-                        <button type="button" class="tab-btn" data-tab="audio-tab">
-                            <i class="fa-solid fa-music"></i> Âm thanh MP3
-                        </button>
-                    </div>
-
-                    <div class="tabs-content">
-                        <!-- Video Formats List -->
-                        <div id="video-tab" class="tab-pane active">
-                            <div class="format-grid" id="video-format-list">
-                                <!-- Format items injected via JS -->
-                            </div>
+                <!-- Video Preview & Format Selection -->
+                <section id="preview-section" class="card preview-card hidden">
+                    <div class="preview-header">
+                        <div class="thumbnail-wrapper">
+                            <img id="video-thumb" src="" alt="Thumbnail">
+                            <span id="video-duration" class="duration-badge">00:00</span>
                         </div>
-
-                        <!-- Audio Formats List -->
-                        <div id="audio-tab" class="tab-pane">
-                            <div class="format-grid" id="audio-format-list">
-                                <!-- Audio items injected via JS -->
+                        <div class="video-details">
+                            <span id="video-uploader" class="uploader-tag"><i class="fa-regular fa-user"></i> Uploader</span>
+                            <h3 id="video-title" class="video-title">Title placeholder</h3>
+                            <div class="meta-info">
+                                <span><i class="fa-regular fa-eye"></i> <span id="video-views">0</span> lượt xem</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="action-footer">
-                        <button type="button" id="btn-download-selected" class="btn-success">
-                            <i class="fa-solid fa-cloud-arrow-down"></i>
-                            <span>Bắt Đầu Tải Về</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
+                    <div class="format-selection">
+                        <div class="tabs-bar">
+                            <div class="tabs-header">
+                                <button type="button" class="tab-btn active" data-tab="video-tab">
+                                    <i class="fa-solid fa-video"></i> Video HD / 4K
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="audio-tab">
+                                    <i class="fa-solid fa-music"></i> Âm thanh MP3
+                                </button>
+                            </div>
+                            <button type="button" id="btn-download-selected" class="btn-success btn-sm">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                                <span>Bắt Đầu Tải Về</span>
+                            </button>
+                        </div>
 
-            <!-- Active Downloads Progress Section -->
-            <section id="downloads-section" class="card downloads-card hidden">
-                <div class="card-header">
-                    <h3><i class="fa-solid fa-spinner fa-spin"></i> Tiến Trình Tải Trực Tiếp</h3>
-                    <span id="download-status-badge" class="badge badge-info">Đang tải...</span>
-                </div>
-
-                <div class="download-item">
-                    <div class="download-info">
-                        <h4 id="dl-title" class="dl-title">Đang tải video...</h4>
-                        <div class="dl-stats">
-                            <span id="dl-speed"><i class="fa-solid fa-gauge-high"></i> 0 MB/s</span>
-                            <span id="dl-downloaded"><i class="fa-solid fa-hard-drive"></i> 0 MB / 0 MB</span>
-                            <span id="dl-eta"><i class="fa-regular fa-clock"></i> ETA: --</span>
+                        <div class="tabs-content">
+                            <div id="video-tab" class="tab-pane active">
+                                <div class="format-grid" id="video-format-list">
+                                    <!-- Format items injected via JS -->
+                                </div>
+                            </div>
+                            <div id="audio-tab" class="tab-pane">
+                                <div class="format-grid" id="audio-format-list">
+                                    <!-- Audio items injected via JS -->
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="progress-bar-container">
-                        <div id="progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
-                    </div>
-                    <div class="progress-percent-wrapper">
-                        <span id="dl-percent" class="dl-percent">0%</span>
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- History Library Section -->
-            <section class="card history-card">
-                <div class="card-header">
-                    <h3><i class="fa-solid fa-folder-open"></i> Thư viện file đã tải</h3>
-                    <button type="button" id="btn-open-folder" class="btn-outline">
-                        <i class="fa-solid fa-folder-show"></i>
-                        <span>Mở Thư Mục Downloads</span>
+                <!-- Active Downloads Progress Section -->
+                <section id="downloads-section" class="card downloads-card hidden">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-spinner fa-spin" id="dl-header-icon"></i> <span id="dl-header-title">Tiến Trình Tải Trực Tiếp</span></h3>
+                        <span id="download-status-badge" class="badge badge-info">Đang tải...</span>
+                    </div>
+
+                    <div class="download-item">
+                        <div class="download-info">
+                            <h4 id="dl-title" class="dl-title">Đang tải video...</h4>
+                            <div class="dl-stats">
+                                <span id="dl-speed"><i class="fa-solid fa-gauge-high"></i> 0 MB/s</span>
+                                <span id="dl-downloaded"><i class="fa-solid fa-hard-drive"></i> 0 MB / 0 MB</span>
+                                <span id="dl-eta"><i class="fa-regular fa-clock"></i> ETA: --</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div id="progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-percent-wrapper">
+                            <span id="dl-percent" class="dl-percent">0%</span>
+                        </div>
+                        <div id="dl-actions-bar" class="hidden actions-row">
+                            <a id="btn-save-browser" href="#" download class="btn-success btn-action">
+                                <i class="fa-solid fa-download"></i> Tải Về Máy Tính
+                            </a>
+                            <button type="button" id="btn-open-folder-success" class="btn-outline btn-action">
+                                <i class="fa-solid fa-folder-open"></i> Mở Thư Mục (Explorer)
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Idle State Placeholder Card -->
+                <section id="idle-placeholder" class="card idle-card">
+                    <div class="idle-content">
+                        <div class="idle-icon-wrapper">
+                            <i class="fa-solid fa-bolt-lightning idle-icon"></i>
+                        </div>
+                        <h3>Sẵn sàng xử lý liên kết</h3>
+                        <p>Dán liên kết video từ YouTube, TikTok, Facebook... vào ô bên trên để phân tích và tải về tốc độ tối đa.</p>
+                        <div class="features-badges">
+                            <span class="feature-tag"><i class="fa-solid fa-shield-halved"></i> Không Quảng Cáo</span>
+                            <span class="feature-tag"><i class="fa-solid fa-gauge-simple-high"></i> Tốc Độ Cao</span>
+                            <span class="feature-tag"><i class="fa-solid fa-music"></i> Tải MP3</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Sidebar Column -->
+            <div class="right-sidebar">
+                <!-- Sidebar Tab Navigation -->
+                <div class="sidebar-tabs">
+                    <button type="button" class="sidebar-tab-btn active" data-sidebar-tab="sidebar-files">
+                        <i class="fa-solid fa-folder-open"></i> Thư Viện
+                    </button>
+                    <button type="button" class="sidebar-tab-btn" data-sidebar-tab="sidebar-about">
+                        <i class="fa-solid fa-circle-info"></i> Giới Thiệu
                     </button>
                 </div>
 
-                <div class="history-list" id="history-list">
-                    <!-- Injected via JS -->
-                    <div class="empty-state">
-                        <i class="fa-solid fa-box-open empty-icon"></i>
-                        <p>Chưa có file nào được tải về trong thư mục.</p>
-                    </div>
+                <!-- Sidebar Tab: File History -->
+                <div id="sidebar-files" class="sidebar-pane active">
+                    <section class="card history-card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-download"></i> File Đã Tải</h3>
+                            <button type="button" id="btn-open-folder" class="btn-outline btn-xs" title="Mở thư mục Downloads">
+                                <i class="fa-solid fa-folder-show"></i>
+                                <span>Mở Thư Mục</span>
+                            </button>
+                        </div>
+
+                        <div class="history-list" id="history-list">
+                            <!-- Injected via JS -->
+                            <div class="empty-state">
+                                <i class="fa-solid fa-box-open empty-icon"></i>
+                                <p>Chưa có file nào trong thư mục.</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </section>
-        </main>
+
+                <!-- Sidebar Tab: About & Guide -->
+                <div id="sidebar-about" class="sidebar-pane">
+                    <section class="card about-card">
+                        <div class="about-header">
+                            <div class="about-logo">
+                                <i class="fa-solid fa-circle-play"></i>
+                            </div>
+                            <div>
+                                <h3 class="about-app-name">Media Download Studio</h3>
+                                <span class="about-version">Phiên bản 1.0.0</span>
+                            </div>
+                        </div>
+
+                        <div class="about-content">
+                            <div class="about-section">
+                                <h4><i class="fa-solid fa-star"></i> Tính Năng Nổi Bật</h4>
+                                <ul class="about-features">
+                                    <li><i class="fa-solid fa-check"></i> Tải video chất lượng cao lên đến 4K/8K</li>
+                                    <li><i class="fa-solid fa-check"></i> Trích xuất âm thanh MP3 chất lượng cao</li>
+                                    <li><i class="fa-solid fa-check"></i> Hỗ trợ hơn 1.000+ nền tảng trực tuyến</li>
+                                    <li><i class="fa-solid fa-check"></i> Tốc độ tải tối đa, đa luồng</li>
+                                    <li><i class="fa-solid fa-check"></i> Tự động ghép video + audio chất lượng tốt nhất</li>
+                                    <li><i class="fa-solid fa-check"></i> Giao diện tiếng Việt, dễ sử dụng</li>
+                                    <li><i class="fa-solid fa-check"></i> Không quảng cáo, không giới hạn</li>
+                                </ul>
+                            </div>
+
+                            <div class="about-section">
+                                <h4><i class="fa-solid fa-book-open"></i> Hướng Dẫn Sử Dụng</h4>
+                                <div class="guide-steps">
+                                    <div class="guide-step">
+                                        <span class="step-num">1</span>
+                                        <p>Mở trang web chứa video (YouTube, TikTok, FB...), sao chép đường dẫn video.</p>
+                                    </div>
+                                    <div class="guide-step">
+                                        <span class="step-num">2</span>
+                                        <p>Dán vào ô nhập liệu hoặc nhấn nút <strong>Dán</strong>, sau đó nhấn <strong>Phân Tích</strong>.</p>
+                                    </div>
+                                    <div class="guide-step">
+                                        <span class="step-num">3</span>
+                                        <p>Chọn định dạng Video (HD/4K) hoặc Âm thanh (MP3), rồi nhấn <strong>Bắt Đầu Tải Về</strong>.</p>
+                                    </div>
+                                    <div class="guide-step">
+                                        <span class="step-num">4</span>
+                                        <p>File tải xong sẽ tự động lưu vào thư mục <strong>Downloads</strong>.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="about-section">
+                                <h4><i class="fa-solid fa-globe"></i> Nền Tảng Hỗ Trợ</h4>
+                                <div class="platform-tags">
+                                    <span class="platform-tag">YouTube</span>
+                                    <span class="platform-tag">TikTok</span>
+                                    <span class="platform-tag">Facebook</span>
+                                    <span class="platform-tag">Instagram</span>
+                                    <span class="platform-tag">Twitter / X</span>
+                                    <span class="platform-tag">Vimeo</span>
+                                    <span class="platform-tag">Dailymotion</span>
+                                    <span class="platform-tag">SoundCloud</span>
+                                    <span class="platform-tag">+1000 khác</span>
+                                </div>
+                            </div>
+
+                            <div class="about-section license-info-section">
+                                <h4><i class="fa-solid fa-shield-halved"></i> Bản Quyền Sử Dụng</h4>
+                                <div class="license-status-card">
+                                    <div class="license-row">
+                                        <span>Trạng thái:</span>
+                                        <strong id="about-license-status" class="text-danger">Chưa Kích Hoạt</strong>
+                                    </div>
+                                    <div class="license-row">
+                                        <span>Mã Máy:</span>
+                                        <code id="about-machine-id">--------</code>
+                                    </div>
+                                    <div class="license-row hidden" id="about-expiry-row">
+                                        <span>Hạn dùng:</span>
+                                        <span id="about-license-expiry">--/--/----</span>
+                                    </div>
+                                    <button type="button" id="btn-open-license-modal" class="btn-primary btn-sm btn-block margin-top-sm">
+                                        <i class="fa-solid fa-key"></i> Kích Hoạt Bản Quyền (10.000đ/Năm)
+                                    </button>
+                                    <button type="button" id="btn-reset-license" class="btn-outline btn-xs btn-block margin-top-sm" title="Xóa license để thử nghiệm kích hoạt lại">
+                                        <i class="fa-solid fa-rotate-left"></i> Reset Bản Quyền (Để Test)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="about-section about-footer-info">
+                                <p>© 2026 August87. Mọi quyền được bảo lưu.</p>
+                                <p class="about-contact">Hỗ trợ Telegram: <strong>@august8787</strong></p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
 
         <!-- Footer -->
         <footer class="footer">
-            <p>Powered by <strong>yt-dlp Engine</strong> & <strong>FastAPI Python</strong></p>
+            <p>Powered by August87 & AI</p>
         </footer>
+    </div>
+
+    <!-- Activation Overlay Modal -->
+    <div id="activation-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrapper">
+                    <i class="fa-solid fa-shield-cat modal-icon"></i>
+                    <div>
+                        <h3>Kích Hoạt Bản Quyền</h3>
+                        <p class="modal-subtitle">Media Download Studio • Tải Video & Âm Thanh Không Giới Hạn</p>
+                    </div>
+                </div>
+                <button type="button" id="btn-close-modal" class="btn-close">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Status Banner -->
+                <div id="modal-status-banner" class="status-banner unactivated">
+                    <i class="fa-solid fa-lock"></i>
+                    <div>
+                        <h4 id="modal-status-title">Ứng dụng chưa được kích hoạt</h4>
+                        <p id="modal-status-desc">Vui lòng đăng ký bản quyền 10.000đ/năm để sử dụng tính năng tải video.</p>
+                    </div>
+                </div>
+
+                <!-- Machine ID Box -->
+                <div class="machine-id-box">
+                    <span class="box-label">MÃ MÁY CỦA BẠN (MACHINE ID):</span>
+                    <div class="machine-id-value-row">
+                        <code id="modal-machine-id">------------</code>
+                        <button type="button" id="btn-copy-machine-id" class="btn-outline btn-xs" title="Sao chép Mã Máy">
+                            <i class="fa-regular fa-copy"></i> Copy Mã Máy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Plan Selection Cards -->
+                <div class="plan-selection-section">
+                    <h4><i class="fa-solid fa-tags"></i> Chọn Gói Bản Quyền</h4>
+                    <div class="plans-grid">
+                        <div class="plan-card" data-plan="trial">
+                            <div class="plan-badge">Miễn Phí</div>
+                            <h5 class="plan-title">🎁 Dùng Thử</h5>
+                            <div class="plan-duration">7 Ngày</div>
+                            <div class="plan-price">0 VNĐ</div>
+                        </div>
+                        <div class="plan-card" data-plan="6months">
+                            <h5 class="plan-title">🥉 6 Tháng</h5>
+                            <div class="plan-duration">180 Ngày</div>
+                            <div class="plan-price">19.000 VNĐ</div>
+                        </div>
+                        <div class="plan-card active" data-plan="1year">
+                            <div class="plan-badge hot">Phổ Biến</div>
+                            <h5 class="plan-title">🥈 1 Năm</h5>
+                            <div class="plan-duration">365 Ngày</div>
+                            <div class="plan-price">29.000 VNĐ</div>
+                        </div>
+                        <div class="plan-card" data-plan="lifetime">
+                            <div class="plan-badge vip">Tiết Kiệm</div>
+                            <h5 class="plan-title">👑 Vĩnh Viễn</h5>
+                            <div class="plan-duration">Trọn Đời</div>
+                            <div class="plan-price">99.000 VNĐ</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trial Action Box (Shown when Trial Selected) -->
+                <div id="trial-action-box" class="trial-box hidden">
+                    <p><i class="fa-solid fa-gift"></i> Miễn phí trải nghiệm đầy đủ tính năng trong 7 ngày trên máy này!</p>
+                    <button type="button" id="btn-claim-trial" class="btn-primary btn-block margin-top-sm">
+                        <i class="fa-solid fa-bolt"></i> Kích Hoạt Dùng Thử 7 Ngày Ngay
+                    </button>
+                </div>
+
+                <!-- Payment Instructions (Shown when Paid Plan Selected) -->
+                <div id="paid-plan-section" class="payment-instructions">
+                    <h4><i class="fa-solid fa-building-columns"></i> Thông Tin Chuyển Khoản Gói <span id="selected-plan-name" class="highlight-text">1 Năm (29.000đ)</span></h4>
+                    <div class="bank-card">
+                        <div class="bank-row">
+                            <span class="bank-label">Ngân hàng:</span>
+                            <strong class="bank-val">MBBank (Ngân hàng Quân Đội)</strong>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Số tài khoản:</span>
+                            <strong class="bank-val highlight-val" id="bank-stk">938118</strong>
+                            <button type="button" id="btn-copy-stk" class="btn-icon-xs" title="Copy số tài khoản">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Chủ tài khoản:</span>
+                            <strong class="bank-val">LE VIET THANH</strong>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Số tiền:</span>
+                            <strong class="bank-val text-success" id="bank-amount">29.000 VNĐ</strong>
+                        </div>
+                        <div class="bank-row">
+                            <span class="bank-label">Nội dung CK:</span>
+                            <code class="bank-val" id="bank-content">MDS <span class="mid-placeholder">MãMáy</span></code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activation Options -->
+                <div class="activation-steps">
+                    <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Kích Hoạt Nhanh</h4>
+                    <p class="step-desc">Sau khi chuyển khoản số tiền tương ứng gói đã chọn, nhấn nút bên dưới để gửi thông báo duyệt cho Admin:</p>
+                    <button type="button" id="btn-request-activation" class="btn-success btn-block">
+                        <i class="fa-paper-plane"></i> Gửi Yêu Cầu Kích Hoạt Tự Động Đến Admin
+                    </button>
+                    <p id="request-feedback" class="request-feedback-text hidden"></p>
+
+                    <div class="divider"><span>HOẶC NHẬP KEY TRỰC TIẾP</span></div>
+
+                    <form id="license-form" class="license-input-form">
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-key input-icon"></i>
+                            <input type="text" id="license-key-input" placeholder="MDS-XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="off" required>
+                        </div>
+                        <button type="submit" id="btn-submit-key" class="btn-primary">
+                            <i class="fa-solid fa-circle-check"></i> Kích Hoạt
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

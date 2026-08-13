@@ -19,3 +19,17 @@ venv/
 *.part
 *.ytdl
 test_4k*
+
+# PyInstaller build output
+build/
+dist/
+
+# License & Runtime Private Configs
+license.dat
+approved_keys.json
+bot_config.json
+time_guard.dat
+trial_used.dat
+*.log
+.claude/
+.gemini/

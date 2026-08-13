@@ -5,11 +5,36 @@ import threading
 import yt_dlp
 from typing import Dict, Any, Optional
 
-DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "downloads")
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+from .paths import downloads_dir
+
+DOWNLOAD_DIR = downloads_dir()
 
 # Global task storage for progress tracking
 download_tasks: Dict[str, Dict[str, Any]] = {}
+
+def get_ffmpeg_path() -> Optional[str]:
+    """Locate FFmpeg executable path via imageio_ffmpeg or system PATH."""
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        import shutil
+        return shutil.which('ffmpeg')
+
+JS_RUNTIMES_OPT = {'node': {}}
+
+
+def js_runtime_opts() -> Dict[str, Any]:
+    """Chi ep dung Node khi may that su co Node.
+
+    Ban .exe portable co the chay tren may khong cai Node. Neu van ep
+    js_runtimes={'node': {}} thi yt-dlp khong con runtime nao de giai ma
+    signature. Bo han key nay thi yt-dlp tu do cac runtime khac.
+    """
+    import shutil
+    if shutil.which('node'):
+        return {'js_runtimes': JS_RUNTIMES_OPT}
+    return {}
 
 def format_bytes(bytes_num: Optional[float]) -> str:
     if not bytes_num:
@@ -33,11 +58,16 @@ class YTDLPManager:
     @staticmethod
     def get_info(url: str) -> Dict[str, Any]:
         """Fetch video metadata and available download formats."""
+        ffmpeg_path = get_ffmpeg_path()
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
             'skip_download': True,
+            **js_runtime_opts(),
         }
+        if ffmpeg_path:
+            ydl_opts['ffmpeg_location'] = ffmpeg_path
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
@@ -125,38 +155,50 @@ class YTDLPManager:
                     'percentage': round(percentage, 1),
                     'downloaded_str': format_bytes(downloaded),
                     'total_str': format_bytes(total),
-                    'speed': f"{format_bytes(speed)}/s" if speed else "Đang cập nhật...",
+                    'speed': f"{format_bytes(speed)}/s" if speed else "Đang xử lý...",
                     'eta': format_seconds(eta) if eta else "---",
                     'filename': os.path.basename(d.get('filename', ''))
                 })
             elif d['status'] == 'finished':
-                final_filename = os.path.basename(d.get('filename', ''))
+                # Stream component completed; wait for full process completion
                 download_tasks[task_id].update({
-                    'status': 'finished',
-                    'percentage': 100.0,
-                    'filename': final_filename,
-                    'speed': '0 B/s',
-                    'eta': 'Hoàn thành'
+                    'percentage': 99.0,
+                    'speed': 'Đang xử lý ghép file...',
+                    'eta': 'Đang ghép...'
+                })
+
+        def postprocessor_hook(d: Dict[str, Any]):
+            pp = d.get('postprocessor')
+            status = d.get('status')
+            if pp == 'Merger' and status == 'started':
+                download_tasks[task_id].update({
+                    'status': 'merging',
+                    'percentage': 99.5,
+                    'speed': 'Đang ghép Video & Audio (FFmpeg)...',
+                    'eta': 'Sắp xong...'
                 })
 
         def run_download():
             outtmpl = os.path.join(DOWNLOAD_DIR, '%(title)s [%(id)s].%(ext)s')
+            ffmpeg_path = get_ffmpeg_path()
             
             ydl_opts = {
                 'outtmpl': outtmpl,
                 'progress_hooks': [progress_hook],
+                'postprocessor_hooks': [postprocessor_hook],
                 'quiet': True,
                 'no_warnings': True,
+                'overwrites': True,
+                **js_runtime_opts(),
             }
 
-            # Check for ffmpeg via imageio_ffmpeg or system PATH
-            ffmpeg_path = None
-            try:
-                import imageio_ffmpeg
-                ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-            except ImportError:
-                import shutil
-                ffmpeg_path = shutil.which('ffmpeg')
+            # Immediately update status to downloading so UI responds instantly
+            download_tasks[task_id].update({
+                'status': 'downloading',
+                'percentage': 0.1,
+                'speed': 'Đang kết nối...',
+                'eta': 'Đang xử lý...'
+            })
 
             if ffmpeg_path:
                 ydl_opts['ffmpeg_location'] = ffmpeg_path
@@ -172,29 +214,51 @@ class YTDLPManager:
                         }],
                     })
                 else:
-                    # Download native audio stream if ffmpeg is missing
                     ydl_opts['format'] = 'bestaudio/best'
             else:
                 if ffmpeg_path:
                     ydl_opts['format'] = format_id if '+' in format_id or 'best' in format_id else f"{format_id}+bestaudio/best"
                     ydl_opts['merge_output_format'] = 'mp4'
                 else:
-                    # Fallback to single stream if ffmpeg missing
                     ydl_opts['format'] = 'best'
 
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
+                    title = info.get('title', 'Video') if info else 'Video'
+                    download_tasks[task_id]['title'] = title
+                    
+                    final_filename = ""
                     if info:
-                        download_tasks[task_id]['title'] = info.get('title', 'Video')
+                        final_filepath = ydl.prepare_filename(info)
+                        if not is_audio and ffmpeg_path:
+                            base, _ = os.path.splitext(final_filepath)
+                            final_filepath = base + '.mp4'
+                        final_filename = os.path.basename(final_filepath)
+
+                    download_tasks[task_id].update({
+                        'status': 'finished',
+                        'percentage': 100.0,
+                        'filename': final_filename,
+                        'speed': '0 B/s',
+                        'eta': 'Hoàn thành'
+                    })
             except Exception as e:
-                # Retry with simplest single stream format
+                # Retry fallback to best single stream if multi-stream setup fails
                 try:
                     ydl_opts['format'] = 'best'
                     ydl_opts.pop('merge_output_format', None)
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                        ydl.download([url])
-                    return
+                        info = ydl.extract_info(url, download=True)
+                        final_filename = os.path.basename(ydl.prepare_filename(info)) if info else ''
+                        download_tasks[task_id].update({
+                            'status': 'finished',
+                            'percentage': 100.0,
+                            'filename': final_filename,
+                            'speed': '0 B/s',
+                            'eta': 'Hoàn thành'
+                        })
+                        return
                 except Exception as err:
                     e = err
                 download_tasks[task_id].update({
@@ -226,3 +290,4 @@ class YTDLPManager:
                 })
         # Sort newest first
         return sorted(files, key=lambda x: x['mtime'], reverse=True)
+
