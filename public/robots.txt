@@ -1,0 +1,5 @@
+# robots.txt cho Media Download Studio
+User-agent: *
+Allow: /
+
+Sitemap: https://media-dl.web.app/sitemap.xml
