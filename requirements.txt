@@ -1,5 +1,7 @@
 fastapi>=0.100.0
 uvicorn>=0.22.0
-yt-dlp>=2024.1.1
+# YouTube doi co che lien tuc, ban cu bi HTTP 403 giua chung khi tai.
+# Ban 2026.7.4 da hong; 2026.8.19 chay lai duoc. Luon dong goi ban moi nhat.
+yt-dlp>=2026.8.19
 sse-starlette>=1.6.0
 imageio-ffmpeg>=0.4.8
