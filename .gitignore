@@ -40,3 +40,6 @@ trial_used.dat
 *-firebase-adminsdk-*.json
 .firebase/
 firebase-debug.log
+
+# Facebook Page token (KHONG BAO GIO commit)
+fb_config.json
