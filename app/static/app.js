@@ -848,22 +848,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Reset License Button (For Testing)
-    const btnResetLicense = document.getElementById('btn-reset-license');
-    if (btnResetLicense) {
-        btnResetLicense.addEventListener('click', async () => {
-            if (confirm('Bạn có chắc muốn xóa license hiện tại để test lại không?')) {
-                try {
-                    await fetch('/api/license/reset', { method: 'POST' });
-                    alert('🔄 Đã xóa license! Ứng dụng đã chuyển về trạng thái Chưa Kích Hoạt.');
-                    await checkLicenseStatus();
-                } catch (err) {
-                    alert('Lỗi kết nối khi reset.');
-                }
-            }
-        });
-    }
-
     // Initial Load & Auto Poll
     checkLicenseStatus();
     autoCheckInterval = setInterval(checkLicenseStatus, 3000);

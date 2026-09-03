@@ -87,18 +87,6 @@ async def claim_trial():
     return res
 
 
-@app.post("/api/license/reset")
-async def reset_license_endpoint():
-    """Xoa file license.dat va approved_keys.json de quay ve trang thai Chua Kich Hoat (dung de test)."""
-    lic_file = os.path.join(base_dir(), "license.dat")
-    app_file = os.path.join(base_dir(), "approved_keys.json")
-    if os.path.exists(lic_file):
-        os.remove(lic_file)
-    if os.path.exists(app_file):
-        os.remove(app_file)
-    return {"success": True, "message": "Đã reset trạng thái bản quyền về Chưa Kích Hoạt!"}
-
-
 @app.post("/api/license/activate")
 async def activate_license(req: ActivateRequest):
     """Kich hoat license bang key."""
