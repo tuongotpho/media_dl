@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import uuid
 import threading
@@ -11,6 +12,25 @@ DOWNLOAD_DIR = downloads_dir()
 
 # Global task storage for progress tracking
 download_tasks: Dict[str, Dict[str, Any]] = {}
+
+
+def _clamp_format_height(format_id: str, max_height: int) -> str:
+    """Ha tran do phan giai trong chuoi format cua yt-dlp.
+
+    'bestvideo[height<=2160]+bestaudio/best' voi max_height=1080
+    -> 'bestvideo[height<=1080]+bestaudio/best'
+
+    Chuoi khong theo mau tren (vi du 'best') se duoc thay bang mot chuoi
+    co rang buoc chieu cao, de khong con duong nao vuot tran.
+    """
+    def repl(m):
+        return "height<=%d" % min(int(m.group(1)), max_height)
+
+    clamped, n = re.subn(r'height<=(\d+)', repl, format_id)
+    if n:
+        return clamped
+    return "bestvideo[height<=%d]+bestaudio/best[height<=%d]/best[height<=%d]" % (
+        max_height, max_height, max_height)
 
 def get_ffmpeg_path() -> Optional[str]:
     """Locate FFmpeg executable path via imageio_ffmpeg or system PATH."""
@@ -56,7 +76,7 @@ def format_seconds(seconds: Optional[float]) -> str:
 
 class YTDLPManager:
     @staticmethod
-    def get_info(url: str) -> Dict[str, Any]:
+    def get_info(url: str, max_height: Optional[int] = None) -> Dict[str, Any]:
         """Fetch video metadata and available download formats."""
         ffmpeg_path = get_ffmpeg_path()
         ydl_opts = {
@@ -82,9 +102,10 @@ class YTDLPManager:
         formats_list.append({
             'format_id': 'bestaudio/best',
             'ext': 'mp3',
-            'note': 'Audio MP3 (Chất lượng cao nhất)',
+            'note': 'Audio MP3 128kbps' if max_height else 'Audio MP3 320kbps',
             'resolution': 'Âm thanh duy nhất',
-            'is_audio': True
+            'is_audio': True,
+            'locked': False
         })
         
         raw_formats = info.get('formats', [])
@@ -97,12 +118,15 @@ class YTDLPManager:
                 res_str = f"{height}p"
                 if res_str not in seen_resolutions:
                     seen_resolutions.add(res_str)
+                    locked = max_height is not None and height > max_height
                     formats_list.append({
                         'format_id': f"bestvideo[height<={height}]+bestaudio/best",
                         'ext': 'mp4',
-                        'note': f"Video {res_str} (Siêu nét)",
+                        'note': f"Video {res_str} — cần nâng cấp" if locked
+                                else f"Video {res_str} (Siêu nét)",
                         'resolution': res_str,
-                        'is_audio': False
+                        'is_audio': False,
+                        'locked': locked
                     })
                     
         # Sort video formats by height descending
@@ -125,8 +149,27 @@ class YTDLPManager:
         }
 
     @staticmethod
-    def start_download(url: str, format_id: str, is_audio: bool = False) -> str:
-        """Start a background download task and return task_id."""
+    def active_task_count() -> int:
+        """So task dang chay (chua ket thuc, chua loi)."""
+        return sum(1 for t in download_tasks.values()
+                   if t.get('status') not in ('finished', 'error'))
+
+    @staticmethod
+    def start_download(url: str, format_id: str, is_audio: bool = False,
+                       limits: Optional[Dict[str, Any]] = None) -> str:
+        """Start a background download task and return task_id.
+
+        `limits` la bang gioi han cua goi hien tai (xem license.get_limits).
+        Gioi han duoc ap o day chu khong chi o giao dien, nen sua HTML hay
+        goi thang API cung khong vuot qua duoc.
+        """
+        limits = limits or {}
+        max_height = limits.get('max_height')
+        audio_quality = limits.get('audio_quality', '320')
+
+        if not is_audio and max_height:
+            format_id = _clamp_format_height(format_id, max_height)
+
         task_id = str(uuid.uuid4())
         
         download_tasks[task_id] = {
@@ -210,7 +253,7 @@ class YTDLPManager:
                         'postprocessors': [{
                             'key': 'FFmpegExtractAudio',
                             'preferredcodec': 'mp3',
-                            'preferredquality': '192',
+                            'preferredquality': audio_quality,
                         }],
                     })
                 else:

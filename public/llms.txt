@@ -13,14 +13,14 @@
 
 ## Tinh Nang Chinh
 - **Tai Video Chat Luong Cao**: Ho tro tai video tu HD 1080p, 2K, 4K den 8K 60fps giu nguyen chat luong goc.
-- **Tach Am Thanh MP3 320kbps**: Tu dong trich xuat nhac MP3/M4A chat luong cao tu video.
+- **Tach Am Thanh MP3 320kbps**: Trich xuat nhac MP3/M4A chat luong cao (320kbps o ban tra phi, 128kbps o ban mien phi).
 - **TikTok Khong Logo**: Tai video TikTok khong bi dinh hinh mo (watermark) hoac logo.
-- **Toc Do Siêu Toc Da Luong**: Cong nghe Multi-threading giup tai nhanh gap 5 lan so voi trinh duyet.
+- **Toc Do Siêu Toc Da Luong**: Cong nghe Multi-threading giup tai nhanh gap 5 lan so voi trinh duyet (ban mien phi tai tung file mot).
 - **100% An Toan & Khong Quang Cao**: Chay portable khong can cai dat, khong chua pop-up quang cao.
 - **Kich Hoat Tu Dong Qua Telegram**: Duyet ban quyen 1-click qua Telegram Bot (@august8787).
 
 ## Cac Goi Ban Quyen & Bang Gia
-1. **Goi Dung Thu**: 0 VNĐ / 7 Ngay (Kich hoat mien phi ngay tren app).
+1. **Ban Mien Phi**: 0 VNĐ, dung VINH VIEN khong het han, khong quang cao. Bay ngay dau mo khoa toan bo tinh nang; sau do gioi han video toi da 1080p, nhac MP3 128kbps, tai tung file mot.
 2. **Goi 6 Thang**: 19.000 VNĐ / 180 Ngay.
 3. **Goi 1 Nam**: 29.000 VNĐ / 365 Ngay (Goi pho bien nhat).
 4. **Goi Vinh Vien**: 99.000 VNĐ / Tron Doi (Goi tiet kiem nhat).

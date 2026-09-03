@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from .downloader import YTDLPManager, download_tasks, DOWNLOAD_DIR
 from .paths import static_dir, base_dir
 from .license import get_license_status, validate_license_key, save_license, get_machine_id, claim_trial_license
+from .license import FULL_LIMITS
 
 app = FastAPI(title="Media Download Studio", version="1.0.0")
 
@@ -28,21 +29,25 @@ app.add_middleware(
 # ---- Telegram Bot Config ----
 BOT_TOKEN = "8870394330:AAGzPWicK_EMBygfF0xRpNJQP9bNCP_IlOI"
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
-BOT_CONFIG_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "bot_config.json"
-)
+DEFAULT_ADMIN_CHAT_ID = 5056715300
 
 
 def _get_admin_chat_id():
-    """Doc admin chat_id tu bot_config.json."""
-    if os.path.isfile(BOT_CONFIG_FILE):
-        try:
-            with open(BOT_CONFIG_FILE, "r") as f:
-                return json.load(f).get("admin_chat_id")
-        except Exception:
-            pass
-    return None
+    """Doc admin chat_id tu bot_config.json voi fallback."""
+    config_paths = [
+        os.path.join(base_dir(), "bot_config.json"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bot_config.json"),
+    ]
+    for path in config_paths:
+        if os.path.isfile(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    chat_id = json.load(f).get("admin_chat_id")
+                    if chat_id:
+                        return chat_id
+            except Exception:
+                pass
+    return DEFAULT_ADMIN_CHAT_ID
 
 
 # ---- Pydantic Models ----
@@ -185,26 +190,45 @@ def _is_licensed() -> bool:
     return status.get("activated", False)
 
 
+def _current_limits() -> dict:
+    """Bang gioi han cua goi dang dung.
+
+    Ban mien phi khong bi chan truy cap, chi bi ha tran tinh nang. Gioi han
+    lay tu day chu khong lay tu request, nen sua giao dien hay goi thang API
+    deu khong vuot qua duoc.
+    """
+    return get_license_status().get("limits", {})
+
+
 # ---- Video API (co kiem tra license) ----
 
 @app.post("/api/info")
 async def get_video_info(req: VideoInfoRequest):
-    if not _is_licensed():
-        raise HTTPException(status_code=403,
-                            detail="Vui lòng kích hoạt bản quyền để sử dụng.")
+    limits = _current_limits()
     try:
-        info = await asyncio.to_thread(YTDLPManager.get_info, req.url)
+        info = await asyncio.to_thread(
+            YTDLPManager.get_info, req.url, limits.get("max_height"))
+        info["limits"] = limits
         return info
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/download")
 async def start_download(req: DownloadRequest):
-    if not _is_licensed():
-        raise HTTPException(status_code=403,
-                            detail="Vui lòng kích hoạt bản quyền để sử dụng.")
+    limits = _current_limits()
+
+    max_concurrent = limits.get("max_concurrent", 1)
+    if YTDLPManager.active_task_count() >= max_concurrent:
+        raise HTTPException(
+            status_code=429,
+            detail=(f"Bản miễn phí tải từng file một. Đợi file hiện tại xong, "
+                    f"hoặc nâng cấp để tải {FULL_LIMITS['max_concurrent']} file cùng lúc.")
+            if max_concurrent == 1 else
+            f"Đang tải tối đa {max_concurrent} file cùng lúc. Vui lòng đợi.")
+
     try:
-        task_id = YTDLPManager.start_download(req.url, req.format_id, req.is_audio)
+        task_id = YTDLPManager.start_download(
+            req.url, req.format_id, req.is_audio, limits)
         return {"task_id": task_id, "message": "Download task started"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

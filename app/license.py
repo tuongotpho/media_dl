@@ -337,7 +337,32 @@ def claim_trial_license(machine_id: str = None) -> dict:
 
 # ===================== STATUS =====================
 
-def get_license_status() -> dict:
+# ===================== GIOI HAN GOI MIEN PHI =====================
+#
+# Ban mien phi dung duoc vinh vien nhung bi khoa cac tinh nang cao cap.
+# Bay ngay dau tien (goi dung thu) mo khoa toan bo de nguoi dung nem thu.
+
+FREE_LIMITS = {
+    "max_height": 1080,        # toi da 1080p
+    "audio_quality": "128",    # MP3 128kbps
+    "max_concurrent": 1,       # tai tung file mot
+    "allow_playlist": False,
+}
+
+FULL_LIMITS = {
+    "max_height": None,        # khong gioi han: 2K, 4K, 8K
+    "audio_quality": "320",    # MP3 320kbps
+    "max_concurrent": 4,
+    "allow_playlist": True,
+}
+
+
+def get_limits(activated: bool) -> dict:
+    """Tra ve bang gioi han tuong ung voi trang thai kich hoat."""
+    return dict(FULL_LIMITS if activated else FREE_LIMITS)
+
+
+def _license_status_core() -> dict:
     """Tra ve trang thai license hien tai."""
     machine_id = get_machine_id()
 
@@ -391,3 +416,24 @@ def get_license_status() -> dict:
         "is_lifetime": is_lifetime,
         "plan_name": plan_name,
     }
+
+
+def get_license_status() -> dict:
+    """Trang thai license kem goi dang dung va bang gioi han tinh nang.
+
+    'activated' van giu nguyen y nghia cu: co license tra phi hoac dung thu
+    con han. Khi het han, app KHONG bi khoa nua ma roi ve ban mien phi.
+    """
+    status = _license_status_core()
+    activated = status.get("activated", False)
+
+    status["tier"] = "full" if activated else "free"
+    status["limits"] = get_limits(activated)
+    status["tier_name"] = status["plan_name"] if activated else "Bản Miễn Phí"
+
+    if not activated:
+        status["message"] = (
+            "Bản miễn phí: tối đa 1080p, MP3 128kbps, tải từng file một. "
+            "Nâng cấp để mở 4K/8K, MP3 320kbps và tải đa luồng."
+        )
+    return status

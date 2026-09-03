@@ -1545,3 +1545,31 @@ html, body {
     }
 }
 
+
+/* ----- Dinh dang bi khoa o ban mien phi ----- */
+.format-option.locked {
+    opacity: .55;
+    cursor: pointer;
+    position: relative;
+}
+
+.format-option.locked:hover {
+    opacity: .8;
+    border-color: var(--accent-amber, #f59e0b);
+}
+
+.format-option.locked .res {
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+.format-lock {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent-amber, #f59e0b);
+    font-size: .85rem;
+}
+
+.text-warning { color: var(--accent-amber, #f59e0b); }

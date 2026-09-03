@@ -136,24 +136,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
         selectedFormat = null;
 
+        // Chon san dinh dang kha dung dau tien (bo qua cac muc bi khoa)
+        const firstUnlocked = data.formats.findIndex(f => !f.locked);
+
         data.formats.forEach((fmt, index) => {
             const item = document.createElement('label');
-            item.className = 'format-option';
-            
-            const isChecked = index === 0;
+            item.className = fmt.locked ? 'format-option locked' : 'format-option';
+
+            const isChecked = index === firstUnlocked;
             if (isChecked) {
                 selectedFormat = fmt;
             }
 
             item.innerHTML = `
-                <input type="radio" name="format_choice" class="format-radio" ${isChecked ? 'checked' : ''}>
+                <input type="radio" name="format_choice" class="format-radio"
+                       ${isChecked ? 'checked' : ''} ${fmt.locked ? 'disabled' : ''}>
                 <div class="format-info">
                     <div class="res">${fmt.resolution}</div>
                     <div class="ext">${fmt.note}</div>
                 </div>
+                ${fmt.locked ? '<i class="fa-solid fa-lock format-lock"></i>' : ''}
             `;
 
             item.addEventListener('click', () => {
+                if (fmt.locked) {
+                    showError(`${fmt.resolution} chỉ có ở bản trả phí. Nâng cấp từ 19.000₫ để mở khoá.`);
+                    openModal();
+                    return;
+                }
                 document.querySelectorAll('.format-option').forEach(el => el.classList.remove('selected'));
                 item.classList.add('selected');
                 item.querySelector('input').checked = true;
@@ -525,23 +535,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         : `Hạn sử dụng còn ${data.days_left} ngày (Đến ${data.expiry}). Cảm ơn bạn đã ủng hộ!`;
                 }
             } else {
-                // Unactivated UI
+                // Ban mien phi: dung duoc vinh vien, chi bi ha tran tinh nang
                 if (licenseBadge) {
                     licenseBadge.className = 'license-badge unactivated';
-                    licenseBadgeText.textContent = 'Chưa Kích Hoạt';
+                    licenseBadgeText.textContent = 'Bản Miễn Phí';
                 }
 
                 if (aboutLicenseStatus) {
-                    aboutLicenseStatus.className = 'text-danger';
-                    aboutLicenseStatus.textContent = 'Chưa Kích Hoạt ❌';
+                    aboutLicenseStatus.className = 'text-warning';
+                    aboutLicenseStatus.textContent = 'Bản Miễn Phí — tối đa 1080p';
                 }
 
                 if (aboutExpiryRow) aboutExpiryRow.classList.add('hidden');
 
                 if (modalStatusBanner) {
                     modalStatusBanner.className = 'status-banner unactivated';
-                    modalStatusTitle.textContent = 'Ứng dụng chưa được kích hoạt';
-                    modalStatusDesc.textContent = 'Vui lòng chọn gói bản quyền hoặc kích hoạt dùng thử 7 ngày để sử dụng.';
+                    modalStatusTitle.textContent = 'Đang dùng bản miễn phí';
+                    modalStatusDesc.textContent = 'Tối đa 1080p, MP3 128kbps, tải từng file một. Nâng cấp để mở 4K/8K, MP3 320kbps và tải đa luồng.';
                 }
             }
         } catch (err) {
