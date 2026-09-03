@@ -8,6 +8,7 @@
 - He dieu hanh ho tro: Windows 10, Windows 11, Windows 8 (64-bit)
 - Nguon tai chinh thuc: https://github.com/tuongotpho/media_dl/releases/download/v1.0.0/MediaDownloadStudio_v1.0.zip
 - Trang chu: https://media-download-free.web.app/
+- Fanpage Facebook chinh thuc: https://www.facebook.com/mediadownloadfree/
 - Tac gia & Phat trien: August87 & AI
 
 ## Tinh Nang Chinh

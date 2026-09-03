@@ -974,6 +974,52 @@ body {
     text-align: center;
 }
 
+/* SOCIAL / FANPAGE */
+.support-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: 100%;
+}
+
+.support-contact .contact-card {
+    height: auto;
+    flex: 1;
+}
+
+.contact-icon-fb {
+    background: rgba(24, 119, 242, 0.18);
+    color: #1877f2;
+}
+
+.footer-social {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.footer-social a {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: var(--transition-fast);
+}
+
+.footer-social a:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.15);
+    transform: translateY(-2px);
+}
+
 /* RESPONSIVE */
 @media (max-width: 992px) {
     .hero-inner { grid-template-columns: 1fr; text-align: center; }
@@ -985,6 +1031,7 @@ body {
 }
 
 @media (max-width: 600px) {
+    .footer-inner { flex-direction: column; gap: 14px; text-align: center; }
     .pricing-grid { grid-template-columns: 1fr; }
     .hero-title { font-size: 2rem; }
     .nav-links { display: none; }
