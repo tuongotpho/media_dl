@@ -164,6 +164,89 @@ def cmd_token_info(args, page_id, token):
         print("\nCANH BAO: token nay se het han. Doi sang long-lived Page token.")
 
 
+def cmd_pages(args, page_id, token):
+    """Liet ke cac Page ma token nay quan ly (KHONG in page token)."""
+    res = call("me/accounts", token, params={"fields": "id,name,username,tasks"})
+    items = res.get("data", [])
+    if not items:
+        die("Token nay khong quan ly Page nao. Kiem tra lai quyen pages_show_list.")
+    print("Cac Page ban quan ly:\n")
+    for p in items:
+        print("  Ten      : %s" % p.get("name"))
+        print("  Page ID  : %s" % p.get("id"))
+        print("  Username : %s" % (p.get("username") or "(chua dat)"))
+        print("  Quyen    : %s" % ", ".join(p.get("tasks", [])))
+        print()
+    print("Chay:  python tools/fb_page.py link --page-id <PAGE_ID>")
+    print("de lay Page token va luu vao .env.local.")
+
+
+def write_env(updates, path=ENV_FILE):
+    """Ghi/cap nhat KEY=value trong .env.local, giu nguyen cac dong khac."""
+    lines = []
+    if os.path.isfile(path):
+        with open(path, "r", encoding="utf-8-sig") as f:
+            lines = f.read().splitlines()
+    seen = set()
+    out = []
+    for line in lines:
+        key = line.split("=", 1)[0].strip() if "=" in line else None
+        if key in updates:
+            out.append("%s=%s" % (key, updates[key]))
+            seen.add(key)
+        else:
+            out.append(line)
+    for k, v in updates.items():
+        if k not in seen:
+            out.append("%s=%s" % (k, v))
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(l for l in out if l.strip()) + "\n")
+
+
+def cmd_link(args, page_id, token):
+    """Doi user token -> Page token (vinh vien neu co app secret) va luu lai."""
+    app_id = os.environ.get("FB_APP_ID")
+    app_secret = os.environ.get("FB_APP_SECRET")
+    user_token = token
+
+    if app_id and app_secret:
+        print("Buoc 1: doi sang long-lived user token (60 ngay)...")
+        res = call("oauth/access_token", token, params={
+            "grant_type": "fb_exchange_token",
+            "client_id": app_id,
+            "client_secret": app_secret,
+            "fb_exchange_token": token,
+        })
+        user_token = res["access_token"]
+        print("        OK -> %s" % mask(user_token))
+    else:
+        print("CANH BAO: thieu FB_APP_ID / FB_APP_SECRET trong .env.local.")
+        print("          Page token lay ra se het han theo user token hien tai.")
+        print("          Them app secret roi chay lai de co token vinh vien.\n")
+
+    print("Buoc 2: lay Page token...")
+    res = call("me/accounts", user_token, params={"fields": "id,name,access_token"})
+    pages = res.get("data", [])
+    if args.page_id:
+        pages = [p for p in pages if p.get("id") == args.page_id]
+        if not pages:
+            die("Khong thay Page ID %s trong danh sach ban quan ly." % args.page_id)
+    if len(pages) > 1:
+        die("Co %d Page. Chay 'pages' roi chon bang --page-id." % len(pages))
+
+    pg = pages[0]
+    page_token = pg["access_token"]
+    print("        OK -> Page '%s' (%s)" % (pg.get("name"), pg.get("id")))
+
+    updates = {"FB_PAGE_ID": pg["id"], "FB_PAGE_TOKEN": page_token}
+    if user_token != token:
+        updates["FB_USER_TOKEN"] = user_token
+    write_env(updates)
+    print("\nDa luu vao .env.local: %s" % ", ".join(sorted(updates)))
+    print("Page token: %s (do dai %d)" % (mask(page_token), len(page_token)))
+    print("\nKiem tra lai bang: python tools/fb_page.py token-info")
+
+
 def cmd_info(args, page_id, token):
     fields = "id,name,username,link,fan_count,followers_count,about,category,verification_status"
     p = call(page_id, token, params={"fields": fields})
@@ -226,7 +309,11 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("token-info", help="Kiem tra token con song, het han khi nao, quyen gi")
+    sub.add_parser("pages", help="Liet ke cac Page ma token dang quan ly")
     sub.add_parser("info", help="Thong tin Page: ten, luot thich, nguoi theo doi")
+
+    p = sub.add_parser("link", help="Doi user token -> Page token va luu vao .env.local")
+    p.add_argument("--page-id", help="Chi dinh Page ID neu ban quan ly nhieu Page")
 
     p = sub.add_parser("post", help="Dang bai text (kem link neu co)")
     p.add_argument("-m", "--message", required=True, help="Noi dung bai dang")
@@ -246,6 +333,8 @@ def main():
 
     handlers = {
         "token-info": cmd_token_info,
+        "pages": cmd_pages,
+        "link": cmd_link,
         "info": cmd_info,
         "post": cmd_post,
         "photo": cmd_photo,
