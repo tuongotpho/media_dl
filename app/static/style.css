@@ -1573,3 +1573,14 @@ html, body {
 }
 
 .text-warning { color: var(--accent-amber, #f59e0b); }
+
+/* ----- Engine yt-dlp ----- */
+.engine-note {
+    font-size: .78rem;
+    line-height: 1.5;
+    margin: 10px 0 0;
+    color: var(--text-secondary);
+}
+
+.engine-note.warn { color: var(--accent-amber, #f59e0b); }
+.engine-note.ok { color: var(--accent-emerald, #10b981); }

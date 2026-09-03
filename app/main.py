@@ -14,6 +14,7 @@ from .downloader import YTDLPManager, download_tasks, DOWNLOAD_DIR
 from .paths import static_dir, base_dir
 from .license import get_license_status, validate_license_key, save_license, get_machine_id, claim_trial_license
 from .license import FULL_LIMITS
+from . import engine
 
 app = FastAPI(title="Media Download Studio", version="1.0.0")
 
@@ -182,6 +183,29 @@ async def request_activation(payload: LicenseRequestPayload = LicenseRequestPayl
     raise HTTPException(status_code=500, detail="Không gửi được yêu cầu")
 
 
+# ---- Engine yt-dlp ----
+
+@app.get("/api/engine")
+async def engine_status():
+    """Phien ban engine hien tai va co ban moi hon khong."""
+    return engine.status()
+
+
+@app.post("/api/engine/update")
+async def engine_update():
+    """Tai ban yt-dlp moi nhat vao thu muc engine/ canh file .exe."""
+    try:
+        return await asyncio.to_thread(engine.update)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@app.on_event("startup")
+async def _check_engine_on_startup():
+    """Hoi PyPI o luong nen, khong lam cham luc mo app."""
+    engine.check_in_background()
+
+
 # ---- License Middleware ----
 
 def _is_licensed() -> bool:
@@ -294,4 +318,21 @@ async def get_file(filename: str):
 # Serve Frontend static files
 STATIC_DIR = static_dir()
 os.makedirs(STATIC_DIR, exist_ok=True)
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+class NoCacheStaticFiles(StaticFiles):
+    """Khong cho trinh duyet cache giao dien.
+
+    Sau khi cap nhat app, webview van giu ban HTML/JS cu trong cache va nguoi
+    dung thay giao dien cu du da cai ban moi. App chay o localhost nen tat
+    cache khong ton bang thong dang ke.
+    """
+
+    def is_not_modified(self, response_headers, request_headers) -> bool:
+        return False
+
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store, must-revalidate"
+        return response
+
+
+app.mount("/", NoCacheStaticFiles(directory=STATIC_DIR, html=True), name="static")

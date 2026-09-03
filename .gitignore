@@ -48,3 +48,8 @@ fb_config.json
 .env
 .env.*
 !.env.example
+
+# Engine yt-dlp do app tu cap nhat luc chay (khong commit)
+engine/
+engine.new/
+engine.old/

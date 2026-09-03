@@ -33,6 +33,10 @@ def open_browser():
 
 
 def main():
+    # PHAI chay truoc moi import yt_dlp (xem app/engine.py)
+    from app.engine import bootstrap
+    bootstrap()
+
     from app.paths import downloads_dir
 
     print("=" * 60)

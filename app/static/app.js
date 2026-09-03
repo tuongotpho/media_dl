@@ -568,6 +568,75 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activationModal) activationModal.classList.add('hidden');
     }
 
+
+    // ===================== ENGINE YT-DLP =====================
+
+    const engineVersion = document.getElementById('engine-version');
+    const engineSource = document.getElementById('engine-source');
+    const engineNote = document.getElementById('engine-note');
+    const btnUpdateEngine = document.getElementById('btn-update-engine');
+
+    function showEngineNote(text, kind) {
+        if (!engineNote) return;
+        engineNote.textContent = text;
+        engineNote.className = 'engine-note ' + (kind || '');
+    }
+
+    async function refreshEngine() {
+        try {
+            const d = await fetch('/api/engine').then(r => r.json());
+            if (engineVersion) engineVersion.textContent = d.current;
+            if (engineSource) {
+                engineSource.textContent = d.using_updated_engine
+                    ? 'đã tự cập nhật' : 'bản đóng gói sẵn';
+            }
+
+            if (d.pending_restart) {
+                showEngineNote('Đã tải bản mới. Khởi động lại ứng dụng để áp dụng.', 'ok');
+            } else if (d.has_update) {
+                showEngineNote(`Có bản mới ${d.latest}. Nên cập nhật để tránh lỗi tải giữa chừng.`, 'warn');
+                if (btnUpdateEngine) {
+                    btnUpdateEngine.innerHTML = `<i class="fa-solid fa-download"></i> Cập Nhật Lên ${d.latest}`;
+                }
+            } else if (d.outdated) {
+                showEngineNote('Engine đã cũ, YouTube có thể chặn giữa chừng. Hãy bấm kiểm tra cập nhật.', 'warn');
+            } else if (d.latest) {
+                showEngineNote('Đang dùng bản mới nhất.', 'ok');
+            } else if (d.checking) {
+                showEngineNote('Đang kiểm tra bản mới...', '');
+            } else if (d.check_error) {
+                showEngineNote('Không kiểm tra được bản mới (không có mạng?). Engine hiện tại vẫn dùng bình thường.', '');
+            }
+        } catch (err) {
+            console.error('Không đọc được trạng thái engine:', err);
+        }
+    }
+
+    if (btnUpdateEngine) {
+        btnUpdateEngine.addEventListener('click', async () => {
+            const original = btnUpdateEngine.innerHTML;
+            btnUpdateEngine.disabled = true;
+            btnUpdateEngine.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải...';
+            showEngineNote('Đang tải engine mới từ PyPI, vui lòng đợi...', '');
+            try {
+                const res = await fetch('/api/engine/update', { method: 'POST' });
+                const d = await res.json();
+                if (!res.ok) throw new Error(d.detail || 'Cập nhật thất bại');
+                showEngineNote(d.message, d.updated ? 'ok' : '');
+                btnUpdateEngine.innerHTML = original;
+            } catch (err) {
+                showEngineNote(err.message, 'warn');
+                btnUpdateEngine.innerHTML = original;
+            } finally {
+                btnUpdateEngine.disabled = false;
+                refreshEngine();
+            }
+        });
+    }
+
+    refreshEngine();
+    setTimeout(refreshEngine, 5000);   // doi lan hoi PyPI o luong nen xong
+
     if (licenseBadge) licenseBadge.addEventListener('click', openModal);
     if (btnOpenLicenseModal) btnOpenLicenseModal.addEventListener('click', openModal);
     if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);

@@ -105,6 +105,11 @@ def start_tray(window, count_active):
 def main() -> int:
     ensure_stdio()
 
+    # PHAI chay truoc moi import yt_dlp: nap engine da tu cap nhat (neu co)
+    # thay cho ban dong goi san trong .exe.
+    from app.engine import bootstrap
+    bootstrap()
+
     import uvicorn
     import webview
 
