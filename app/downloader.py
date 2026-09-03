@@ -14,23 +14,48 @@ DOWNLOAD_DIR = downloads_dir()
 download_tasks: Dict[str, Dict[str, Any]] = {}
 
 
-def _clamp_format_height(format_id: str, max_height: int) -> str:
-    """Ha tran do phan giai trong chuoi format cua yt-dlp.
+def quality_of(width: int, height: int) -> int:
+    """Chat luong cua mot khung hinh = CANH NGAN.
 
-    'bestvideo[height<=2160]+bestaudio/best' voi max_height=1080
-    -> 'bestvideo[height<=1080]+bestaudio/best'
-
-    Chuoi khong theo mau tren (vi du 'best') se duoc thay bang mot chuoi
-    co rang buoc chieu cao, de khong con duong nao vuot tran.
+    Nguoi dung goi video 1080x1920 (doc) la "1080p", giong het 1920x1080
+    (ngang). Neu do bang chieu cao thi video doc bi hieu nham la 1920p va
+    bi khoa oan o ban mien phi, con video ngang lai lot luoi.
     """
-    def repl(m):
-        return "height<=%d" % min(int(m.group(1)), max_height)
+    return min(width, height)
 
-    clamped, n = re.subn(r'height<=(\d+)', repl, format_id)
-    if n:
-        return clamped
-    return "bestvideo[height<=%d]+bestaudio/best[height<=%d]/best[height<=%d]" % (
-        max_height, max_height, max_height)
+
+def format_selector(width: int, height: int) -> str:
+    """Chuoi chon dinh dang ghim CA HAI chieu.
+
+    Rang buoc ca width lan height nen khong the chon nham mot ban co ti le
+    khung hinh khac. Facebook phuc vu nhieu ti le cho cung mot video, va
+    chuoi chi co 'height<=N' se cho yt-dlp lay ban ngang vi no nhieu diem
+    anh hon - video doc bi cat mat hai ben.
+
+    Khong dung format_id chinh xac vi Facebook doi id giua cac lan goi.
+    """
+    return ("bestvideo[width<=%d][height<=%d]+bestaudio/"
+            "best[width<=%d][height<=%d]" % (width, height, width, height))
+
+
+def _clamp_format(format_id: str, max_quality: int) -> str:
+    """Ha tran theo canh ngan, giu nguyen ti le khung hinh.
+
+    3840x2160 tran 1080 -> 1920x1080   (canh ngan 2160 -> 1080)
+    1080x1920 tran 1080 -> giu nguyen  (canh ngan da la 1080)
+    """
+    m = re.search(r'width<=(\d+)\]\[height<=(\d+)', format_id)
+    if not m:
+        # Chuoi la: ep ve mot khung vuong canh max_quality cho chac
+        return format_selector(max_quality, max_quality)
+
+    w, h = int(m.group(1)), int(m.group(2))
+    q = quality_of(w, h)
+    if q <= max_quality:
+        return format_id
+
+    scale = max_quality / float(q)
+    return format_selector(max(2, int(w * scale)), max(2, int(h * scale)))
 
 def get_ffmpeg_path() -> Optional[str]:
     """Locate FFmpeg executable path via imageio_ffmpeg or system PATH."""
@@ -112,27 +137,43 @@ class YTDLPManager:
         for f in raw_formats:
             vcodec = f.get('vcodec', 'none')
             height = f.get('height')
-            ext = f.get('ext', 'mp4')
-            
-            if vcodec != 'none' and height and height >= 360:
-                res_str = f"{height}p"
-                if res_str not in seen_resolutions:
-                    seen_resolutions.add(res_str)
-                    locked = max_height is not None and height > max_height
-                    formats_list.append({
-                        'format_id': f"bestvideo[height<={height}]+bestaudio/best",
-                        'ext': 'mp4',
-                        'note': f"Video {res_str} — cần nâng cấp" if locked
-                                else f"Video {res_str} (Siêu nét)",
-                        'resolution': res_str,
-                        'is_audio': False,
-                        'locked': locked
-                    })
-                    
-        # Sort video formats by height descending
+            width = f.get('width')
+
+            # Bo qua format thieu kich thuoc: khong biet ti le thi khong the
+            # phan biet ban doc voi ban ngang da bi cat.
+            if vcodec == 'none' or not width or not height:
+                continue
+
+            quality = quality_of(width, height)
+            if quality < 240:
+                continue
+
+            key = (width, height)
+            if key in seen_resolutions:
+                continue
+            seen_resolutions.add(key)
+
+            vertical = height > width
+            locked = max_height is not None and quality > max_height
+            label = "%dp%s" % (quality, " dọc" if vertical else "")
+
+            formats_list.append({
+                'format_id': format_selector(width, height),
+                'ext': 'mp4',
+                'width': width,
+                'height': height,
+                'quality': quality,
+                'note': ("%s — cần nâng cấp" % label) if locked
+                        else ("%s · %d×%d" % (label, width, height)),
+                'resolution': label,
+                'is_audio': False,
+                'locked': locked
+            })
+
+        # Sap xep theo canh ngan giam dan
         video_formats = sorted(
             [f for f in formats_list if not f['is_audio']],
-            key=lambda x: int(x['resolution'].replace('p', '')) if x['resolution'].endswith('p') else 0,
+            key=lambda x: x['quality'],
             reverse=True
         )
         audio_formats = [f for f in formats_list if f['is_audio']]
@@ -168,7 +209,7 @@ class YTDLPManager:
         audio_quality = limits.get('audio_quality', '320')
 
         if not is_audio and max_height:
-            format_id = _clamp_format_height(format_id, max_height)
+            format_id = _clamp_format(format_id, max_height)
 
         task_id = str(uuid.uuid4())
         
