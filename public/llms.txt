@@ -7,7 +7,7 @@
 - Phien ban: v1.0.0
 - He dieu hanh ho tro: Windows 10, Windows 11, Windows 8 (64-bit)
 - Nguon tai chinh thuc: https://github.com/tuongotpho/media_dl/releases/download/v1.0.0/MediaDownloadStudio_v1.0.zip
-- Trang chu: https://media-dl.web.app/
+- Trang chu: https://media-download-free.web.app/
 - Tac gia & Phat trien: August87 & AI
 
 ## Tinh Nang Chinh
@@ -31,4 +31,4 @@
 4. Admin bam "Duyet" tren Telegram Bot ➔ Ung dung tu dong mo khoa trong 2 giay.
 
 ## Tai Lieu Chi Tiet
-- Full Specifications: https://media-dl.web.app/llms-full.txt
+- Full Specifications: https://media-download-free.web.app/llms-full.txt

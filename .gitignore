@@ -33,3 +33,10 @@ trial_used.dat
 *.log
 .claude/
 .gemini/
+
+# Firebase service account keys (KHONG BAO GIO commit)
+*serviceAccount*.json
+*service-account*.json
+*-firebase-adminsdk-*.json
+.firebase/
+firebase-debug.log

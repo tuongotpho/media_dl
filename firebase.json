@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "media-download-free",
     "public": "public",
     "ignore": [
       "firebase.json",
