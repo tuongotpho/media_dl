@@ -42,14 +42,25 @@ def load_env_file(path=ENV_FILE):
     """Nap KEY=value tu .env.local vao os.environ (khong ghi de bien co san)."""
     if not os.path.isfile(path):
         return
+    seen = set()
     with open(path, "r", encoding="utf-8-sig") as f:
-        for raw in f:
+        for n, raw in enumerate(f, 1):
             line = raw.strip()
-            if not line or line.startswith("#") or "=" not in line:
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                print("CANH BAO: %s dong %d khong co ten bien, bo qua. "
+                      "Dinh dang dung la KEY=value." % (os.path.basename(path), n),
+                      file=sys.stderr)
                 continue
             key, val = line.split("=", 1)
             key = key.strip()
             val = val.strip().strip('"').strip("'")
+            if key in seen:
+                print("CANH BAO: %s dong %d lap lai bien %s, dung gia tri dau tien."
+                      % (os.path.basename(path), n, key), file=sys.stderr)
+                continue
+            seen.add(key)
             if key and key not in os.environ:
                 os.environ[key] = val
 
