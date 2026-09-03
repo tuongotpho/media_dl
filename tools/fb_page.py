@@ -33,12 +33,30 @@ GRAPH = "https://graph.facebook.com"
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(ROOT, "fb_config.json")
+ENV_FILE = os.path.join(ROOT, ".env.local")
 
 
 # ===================== CAU HINH =====================
 
+def load_env_file(path=ENV_FILE):
+    """Nap KEY=value tu .env.local vao os.environ (khong ghi de bien co san)."""
+    if not os.path.isfile(path):
+        return
+    with open(path, "r", encoding="utf-8-sig") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            key = key.strip()
+            val = val.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = val
+
+
 def load_config():
-    """Doc page_id + token tu env, fallback sang fb_config.json."""
+    """Doc page_id + token tu env / .env.local, fallback sang fb_config.json."""
+    load_env_file()
     cfg = {}
     if os.path.isfile(CONFIG_FILE):
         try:
@@ -52,10 +70,11 @@ def load_config():
 
     if not token:
         die(
-            "Thieu Page Access Token.\n"
-            "  Cach 1: dat bien moi truong FB_PAGE_TOKEN\n"
-            "  Cach 2: tao %s voi noi dung {\"page_id\": \"...\", \"page_token\": \"...\"}\n"
-            "  (fb_config.json da nam trong .gitignore, khong bi commit)" % CONFIG_FILE
+            "Thieu Page Access Token. Chon 1 trong 3 cach:\n"
+            "  1. Dat bien moi truong FB_PAGE_TOKEN\n"
+            "  2. Tao file .env.local o thu muc goc voi dong: FB_PAGE_TOKEN=EAA...\n"
+            "  3. Tao %s voi noi dung {\"page_id\": \"...\", \"page_token\": \"...\"}\n"
+            "  (ca .env.local lan fb_config.json deu da nam trong .gitignore)" % CONFIG_FILE
         )
     if not page_id:
         page_id = "me"  # Page token mac dinh tro ve chinh Page do

@@ -43,3 +43,8 @@ firebase-debug.log
 
 # Facebook Page token (KHONG BAO GIO commit)
 fb_config.json
+
+# Bien moi truong / secrets cuc bo (KHONG BAO GIO commit)
+.env
+.env.*
+!.env.example
