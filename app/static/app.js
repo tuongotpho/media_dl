@@ -279,7 +279,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadHistory();
             } else if (data.status === 'error') {
                 eventSource.close();
-                showError(`Lỗi khi tải: ${data.error || 'Unknown error'}`);
+                if (data.engine_hint) {
+                    handleEngineFailure(data.error);
+                } else {
+                    showError(`Lỗi khi tải: ${data.error || 'Unknown error'}`);
+                }
                 if (downloadStatusBadge) {
                     downloadStatusBadge.className = 'badge badge-danger';
                     downloadStatusBadge.textContent = 'Lỗi';
@@ -306,38 +310,107 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderHistory(files) {
-        if (!files || files.length === 0) {
+    function timeAgo(ts) {
+        const d = Math.floor(Date.now() / 1000) - ts;
+        if (d < 60) return 'vừa xong';
+        if (d < 3600) return Math.floor(d / 60) + ' phút trước';
+        if (d < 86400) return Math.floor(d / 3600) + ' giờ trước';
+        if (d < 604800) return Math.floor(d / 86400) + ' ngày trước';
+        return new Date(ts * 1000).toLocaleDateString('vi-VN');
+    }
+
+    function fmtSize(bytes) {
+        if (!bytes) return '';
+        const u = ['B', 'KB', 'MB', 'GB'];
+        let i = 0, n = bytes;
+        while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+        return n.toFixed(n < 10 && i > 0 ? 1 : 0) + ' ' + u[i];
+    }
+
+    function siteOf(url) {
+        try {
+            const h = new URL(url).hostname.replace(/^(www|m)\./, '');
+            return h.split('.')[0];
+        } catch (e) { return 'khác'; }
+    }
+
+    function renderHistory(entries) {
+        if (!entries || entries.length === 0) {
             historyList.innerHTML = `
                 <div class="empty-state">
-                    <i class="fa-solid fa-box-open empty-icon"></i>
-                    <p>Chưa có file nào trong thư mục.</p>
+                    <i class="fa-solid fa-clock-rotate-left empty-icon"></i>
+                    <p>Chưa tải video nào.</p>
+                    <span class="empty-hint">Lịch sử các lần tải sẽ hiện ở đây.</span>
                 </div>
             `;
             return;
         }
 
         historyList.innerHTML = '';
-        files.forEach(file => {
+        entries.forEach(e => {
             const item = document.createElement('div');
-            item.className = 'history-item';
-            
-            const isAudio = file.name.endsWith('.mp3') || file.name.endsWith('.m4a');
-            const iconClass = isAudio ? 'fa-solid fa-music' : 'fa-solid fa-film';
+            item.className = 'history-item status-' + e.status;
+
+            const icon = e.is_audio ? 'fa-music' : 'fa-film';
+            let badge, actions;
+
+            if (e.status === 'finished' && e.exists) {
+                badge = `<span class="hist-badge ok">${e.quality}</span>`;
+                actions = `<a href="/api/files/${encodeURIComponent(e.filename)}" download
+                              class="btn-outline btn-xs" title="Lưu ra nơi khác">
+                             <i class="fa-solid fa-download"></i>
+                           </a>`;
+            } else if (e.status === 'finished') {
+                badge = `<span class="hist-badge gone">đã xoá khỏi máy</span>`;
+                actions = `<button type="button" class="btn-outline btn-xs js-redo" data-url="${e.url}" title="Tải lại">
+                             <i class="fa-solid fa-rotate-right"></i>
+                           </button>`;
+            } else if (e.status === 'downloading') {
+                badge = `<span class="hist-badge running"><i class="fa-solid fa-spinner fa-spin"></i> đang tải</span>`;
+                actions = '';
+            } else {
+                badge = `<span class="hist-badge fail">thất bại</span>`;
+                actions = `<button type="button" class="btn-outline btn-xs js-redo" data-url="${e.url}" title="Thử lại">
+                             <i class="fa-solid fa-rotate-right"></i>
+                           </button>`;
+            }
 
             item.innerHTML = `
                 <div class="history-file-info">
-                    <i class="${iconClass} file-icon"></i>
-                    <div>
-                        <div class="file-name" title="${file.name}">${file.name}</div>
-                        <div class="file-meta">${file.size} • ${file.mtime}</div>
+                    <i class="fa-solid ${icon} file-icon"></i>
+                    <div class="hist-body">
+                        <div class="file-name" title="${e.title || e.url}">${e.title || e.url}</div>
+                        <div class="file-meta">
+                            ${badge}
+                            <span class="hist-site">${siteOf(e.url)}</span>
+                            ${e.size_bytes ? '<span>' + fmtSize(e.size_bytes) + '</span>' : ''}
+                            <span>${timeAgo(e.ts)}</span>
+                        </div>
+                        ${e.error ? `<div class="hist-error" title="${e.error}">${e.error}</div>` : ''}
                     </div>
                 </div>
-                <a href="/api/files/${encodeURIComponent(file.name)}" download class="btn-outline btn-xs">
-                    <i class="fa-solid fa-download"></i> Tải Về
-                </a>
+                <div class="hist-actions">
+                    ${actions}
+                    <button type="button" class="btn-icon-xs js-del" data-id="${e.id}" title="Xoá khỏi lịch sử">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             `;
             historyList.appendChild(item);
+        });
+
+        historyList.querySelectorAll('.js-redo').forEach(b => {
+            b.addEventListener('click', () => {
+                videoUrlInput.value = b.dataset.url;
+                document.querySelector('[data-sidebar-tab="sidebar-files"]')?.click();
+                searchForm.dispatchEvent(new Event('submit'));
+            });
+        });
+        historyList.querySelectorAll('.js-del').forEach(b => {
+            b.addEventListener('click', async () => {
+                await fetch('/api/history/' + b.dataset.id, { method: 'DELETE' });
+                loadHistory();
+            });
         });
     }
 
@@ -580,6 +653,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!engineNote) return;
         engineNote.textContent = text;
         engineNote.className = 'engine-note ' + (kind || '');
+    }
+
+    async function handleEngineFailure(rawError) {
+        showError('Tải thất bại — nhiều khả năng do engine đã cũ so với thay đổi mới của trang nguồn. Đang tự động cập nhật...');
+        document.querySelector('[data-sidebar-tab="sidebar-about"]')?.click();
+
+        for (let i = 0; i < 40; i++) {
+            await new Promise(r => setTimeout(r, 3000));
+            let d;
+            try { d = await fetch('/api/engine').then(r => r.json()); } catch (e) { continue; }
+            refreshEngine();
+
+            if (d.pending_restart) {
+                showError(`Đã tự cập nhật engine lên ${d.latest}. Khởi động lại ứng dụng rồi tải lại video này.`);
+                return;
+            }
+            if (d.auto_status === 'failed') {
+                showError('Không tự cập nhật được engine. Vào tab Giới Thiệu bấm "Kiểm Tra Cập Nhật", hoặc kiểm tra lại kết nối mạng.');
+                return;
+            }
+            if (d.auto_status === null && i > 2) {
+                showError(`Tải thất bại: ${rawError || ''} — engine đã là bản mới nhất nên nguyên nhân nằm ở chỗ khác (link riêng tư, cần đăng nhập, hoặc video đã bị gỡ).`);
+                return;
+            }
+        }
     }
 
     async function refreshEngine() {

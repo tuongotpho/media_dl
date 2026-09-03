@@ -7,6 +7,8 @@ import yt_dlp
 from typing import Dict, Any, Optional
 
 from .paths import downloads_dir
+from . import history as history_store
+from . import engine
 
 DOWNLOAD_DIR = downloads_dir()
 
@@ -36,6 +38,31 @@ def format_selector(width: int, height: int) -> str:
     """
     return ("bestvideo[width<=%d][height<=%d]+bestaudio/"
             "best[width<=%d][height<=%d]" % (width, height, width, height))
+
+
+def single_stream_selector(format_id: str) -> str:
+    """Ban mot luong (khong can ghep) NHUNG van giu rang buoc kich thuoc.
+
+    Truoc day nhanh du phong dat thang 'best', vut bo ca ti le khung hinh
+    lan tran chat luong cua goi mien phi. Voi nguon phuc vu nhieu ti le nhu
+    Facebook, 'best' lay ban ngang -> video doc bi cat hai ben. Nhanh du
+    phong chay dung luc tai loi, tuc la dung luc nguoi dung de dinh nhat.
+    """
+    m = re.search(r'width<=(\d+)\]\[height<=(\d+)', format_id)
+    if not m:
+        return 'best'
+    return 'best[width<=%s][height<=%s]' % (m.group(1), m.group(2))
+
+
+def _label_of(format_id: str, is_audio: bool, audio_quality: str) -> str:
+    """Nhan chat luong de ghi vao lich su, doc duoc cho nguoi dung."""
+    if is_audio:
+        return "MP3 %skbps" % audio_quality
+    m = re.search(r'width<=(\d+)\]\[height<=(\d+)', format_id)
+    if not m:
+        return "Video"
+    w, h = int(m.group(1)), int(m.group(2))
+    return "%dp%s" % (quality_of(w, h), " dọc" if h > w else "")
 
 
 def _clamp_format(format_id: str, max_quality: int) -> str:
@@ -212,9 +239,13 @@ class YTDLPManager:
             format_id = _clamp_format(format_id, max_height)
 
         task_id = str(uuid.uuid4())
-        
+        quality_label = _label_of(format_id, is_audio, audio_quality)
+        entry_id = history_store.add(url, '', quality_label, is_audio)
+
         download_tasks[task_id] = {
             'task_id': task_id,
+            'entry_id': entry_id,
+            'engine_hint': False,
             'status': 'starting',
             'percentage': 0.0,
             'speed': '0 MB/s',
@@ -304,20 +335,24 @@ class YTDLPManager:
                     ydl_opts['format'] = format_id if '+' in format_id or 'best' in format_id else f"{format_id}+bestaudio/best"
                     ydl_opts['merge_output_format'] = 'mp4'
                 else:
-                    ydl_opts['format'] = 'best'
+                    ydl_opts['format'] = single_stream_selector(format_id)
 
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     title = info.get('title', 'Video') if info else 'Video'
                     download_tasks[task_id]['title'] = title
+                    history_store.update(entry_id, title=title)
                     
                     final_filename = ""
                     if info:
                         final_filepath = ydl.prepare_filename(info)
-                        if not is_audio and ffmpeg_path:
+                        if ffmpeg_path:
+                            # prepare_filename tra ve duoi TRUOC khi hau xu ly.
+                            # ffmpeg ghep video ra .mp4, con tach nhac ra .mp3,
+                            # nen ten ghi lai phai la duoi sau cung.
                             base, _ = os.path.splitext(final_filepath)
-                            final_filepath = base + '.mp4'
+                            final_filepath = base + ('.mp3' if is_audio else '.mp4')
                         final_filename = os.path.basename(final_filepath)
 
                     download_tasks[task_id].update({
@@ -327,10 +362,11 @@ class YTDLPManager:
                         'speed': '0 B/s',
                         'eta': 'Hoàn thành'
                     })
+                    history_store.finish(entry_id, final_filename, DOWNLOAD_DIR)
             except Exception as e:
-                # Retry fallback to best single stream if multi-stream setup fails
+                # Thu lai bang mot luong duy nhat, van giu rang buoc kich thuoc
                 try:
-                    ydl_opts['format'] = 'best'
+                    ydl_opts['format'] = single_stream_selector(format_id)
                     ydl_opts.pop('merge_output_format', None)
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         info = ydl.extract_info(url, download=True)
@@ -342,13 +378,20 @@ class YTDLPManager:
                             'speed': '0 B/s',
                             'eta': 'Hoàn thành'
                         })
+                        history_store.finish(entry_id, final_filename, DOWNLOAD_DIR)
                         return
                 except Exception as err:
                     e = err
+                msg = str(e)
+                engine_hint = engine.looks_like_engine_failure(msg)
+                if engine_hint:
+                    engine.auto_update_after_failure()
                 download_tasks[task_id].update({
                     'status': 'error',
-                    'error': str(e)
+                    'error': msg,
+                    'engine_hint': engine_hint,
                 })
+                history_store.fail(entry_id, msg)
 
         thread = threading.Thread(target=run_download, daemon=True)
         thread.start()

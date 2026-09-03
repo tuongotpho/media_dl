@@ -1584,3 +1584,54 @@ html, body {
 
 .engine-note.warn { color: var(--accent-amber, #f59e0b); }
 .engine-note.ok { color: var(--accent-emerald, #10b981); }
+
+/* ----- Lich su tai xuong ----- */
+.hist-body { min-width: 0; flex: 1; }
+
+.hist-badge {
+    font-size: .68rem;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+.hist-badge.ok      { background: rgba(16,185,129,.16); color: var(--accent-emerald, #10b981); }
+.hist-badge.fail    { background: rgba(236,72,153,.16); color: var(--accent-pink, #ec4899); }
+.hist-badge.running { background: rgba(59,130,246,.16); color: var(--accent-blue, #3b82f6); }
+.hist-badge.gone    { background: rgba(148,163,184,.14); color: var(--text-muted, #64748b); }
+
+.hist-site {
+    text-transform: capitalize;
+    color: var(--text-muted, #64748b);
+}
+
+.hist-error {
+    font-size: .7rem;
+    color: var(--accent-pink, #ec4899);
+    margin-top: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hist-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+.btn-icon-xs {
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: .8rem;
+}
+.btn-icon-xs:hover { color: var(--accent-pink, #ec4899); background: rgba(255,255,255,.05); }
+
+.history-item.status-error .file-icon { color: var(--accent-pink, #ec4899); opacity: .7; }
+
+.empty-hint {
+    display: block;
+    font-size: .75rem;
+    color: var(--text-muted, #64748b);
+    margin-top: 4px;
+}

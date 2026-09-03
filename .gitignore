@@ -53,3 +53,6 @@ fb_config.json
 engine/
 engine.new/
 engine.old/
+
+# Lich su tai cuc bo cua nguoi dung
+history.json

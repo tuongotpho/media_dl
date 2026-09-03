@@ -15,6 +15,7 @@ from .paths import static_dir, base_dir
 from .license import get_license_status, validate_license_key, save_license, get_machine_id, claim_trial_license
 from .license import FULL_LIMITS
 from . import engine
+from . import history as history_store
 
 app = FastAPI(title="Media Download Studio", version="1.0.0")
 
@@ -278,7 +279,20 @@ async def stream_progress(task_id: str):
 
 @app.get("/api/history")
 async def get_history():
-    return YTDLPManager.get_history()
+    """Lich su tai xuong that su, khong phai liet ke thu muc."""
+    return history_store.list_entries(DOWNLOAD_DIR)
+
+
+@app.delete("/api/history/{entry_id}")
+async def delete_history_entry(entry_id: str):
+    history_store.remove(entry_id)
+    return {"success": True}
+
+
+@app.post("/api/history/clear")
+async def clear_history():
+    history_store.clear()
+    return {"success": True}
 
 @app.post("/api/open-folder")
 async def open_download_folder(request: Request):

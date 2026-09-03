@@ -42,6 +42,8 @@ _update_state = {
     "latest": None,
     "error": None,
     "updated_to": None,
+    "auto_tried": False,
+    "auto_status": None,      # None | "updating" | "done" | "failed"
 }
 
 
@@ -200,6 +202,53 @@ def update(force: bool = False) -> dict:
             pass
 
 
+# Dau hieu loi do engine cu, khong phai do link sai hay mat mang.
+# YouTube/Facebook doi co che thi ban yt-dlp cu bao dung nhung loi nay.
+_ENGINE_FAILURE_SIGNS = (
+    "http error 403",
+    "unable to extract",
+    "unable to download video data",
+    "requested format is not available",
+    "signature extraction failed",
+    "nsig extraction failed",
+    "failed to extract any player response",
+    "unsupported url",
+    "no video formats found",
+    "sign in to confirm",
+)
+
+
+def looks_like_engine_failure(error_text: str) -> bool:
+    """Doan xem loi tai co phai do engine cu khong."""
+    t = (error_text or "").lower()
+    return any(sign in t for sign in _ENGINE_FAILURE_SIGNS)
+
+
+def auto_update_after_failure() -> None:
+    """Tu tai ban moi khi phat hien loi kieu engine cu.
+
+    Chi chay mot lan moi phien va chi khi PyPI that su co ban moi hon, nen
+    khong tai lap hay tai vo ich khi loi den tu nguyen nhan khac.
+    """
+    if _update_state.get("auto_tried") or _update_state.get("updated_to"):
+        return
+    _update_state["auto_tried"] = True
+
+    def run():
+        try:
+            latest = fetch_latest()["version"]
+            if _parse(latest) <= _parse(installed_version()):
+                return          # da moi nhat, loi den tu nguyen nhan khac
+            _update_state["auto_status"] = "updating"
+            update()
+            _update_state["auto_status"] = "done"
+        except Exception as e:
+            _update_state["auto_status"] = "failed"
+            _update_state["error"] = str(e)
+
+    threading.Thread(target=run, daemon=True).start()
+
+
 def check_in_background() -> None:
     """Hoi PyPI o luong nen luc khoi dong. Khong bao gio nem loi ra ngoai."""
     def run():
@@ -230,4 +279,5 @@ def status() -> dict:
         "using_updated_engine": running_from_engine_dir(),
         "engine_dir": engine_dir(),
         "pending_restart": bool(_update_state.get("updated_to")),
+        "auto_status": _update_state.get("auto_status"),
     }
