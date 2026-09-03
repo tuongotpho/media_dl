@@ -214,48 +214,84 @@ def write_env(updates, path=ENV_FILE):
         f.write("\n".join(l for l in out if l.strip()) + "\n")
 
 
+def token_type(token):
+    """Tra ve (type, expires_at) cua mot token bat ky."""
+    d = call("debug_token", token, params={"input_token": token}).get("data", {})
+    return d.get("type"), d.get("expires_at", 0)
+
+
 def cmd_link(args, page_id, token):
-    """Doi user token -> Page token (vinh vien neu co app secret) va luu lai."""
+    """Doi token hien co -> Page token vinh vien va luu lai.
+
+    Tu nhan dien token dau vao la USER hay PAGE nen chay lai nhieu lan
+    van dung, ke ca khi FB_PAGE_TOKEN da bi ghi de o lan truoc.
+    """
     app_id = os.environ.get("FB_APP_ID")
     app_secret = os.environ.get("FB_APP_SECRET")
-    user_token = token
 
-    if app_id and app_secret:
-        print("Buoc 1: doi sang long-lived user token (60 ngay)...")
-        res = call("oauth/access_token", token, params={
+    # Uu tien user token neu co, vi chi USER token moi di duoc duong /me/accounts
+    start = os.environ.get("FB_USER_TOKEN") or token
+    ttype, _ = token_type(start)
+    print("Token dau vao : loai %s" % ttype)
+
+    if not (app_id and app_secret):
+        print("\nCANH BAO: thieu FB_APP_ID / FB_APP_SECRET, token se van het han.\n")
+        long_token = start
+    else:
+        print("Buoc 1        : doi sang long-lived token...")
+        res = call("oauth/access_token", start, params={
             "grant_type": "fb_exchange_token",
             "client_id": app_id,
             "client_secret": app_secret,
-            "fb_exchange_token": token,
+            "fb_exchange_token": start,
         })
-        user_token = res["access_token"]
-        print("        OK -> %s" % mask(user_token))
-    else:
-        print("CANH BAO: thieu FB_APP_ID / FB_APP_SECRET trong .env.local.")
-        print("          Page token lay ra se het han theo user token hien tai.")
-        print("          Them app secret roi chay lai de co token vinh vien.\n")
+        long_token = res["access_token"]
+        ttype, _ = token_type(long_token)
+        print("                OK -> %s (loai %s)" % (mask(long_token), ttype))
 
-    print("Buoc 2: lay Page token...")
-    res = call("me/accounts", user_token, params={"fields": "id,name,access_token"})
-    pages = res.get("data", [])
-    if args.page_id:
-        pages = [p for p in pages if p.get("id") == args.page_id]
+    print("Buoc 2        : lay Page token...")
+    user_token = None
+
+    if ttype == "USER":
+        user_token = long_token
+        res = call("me/accounts", long_token, params={"fields": "id,name,access_token"})
+        pages = res.get("data", [])
+        if args.page_id:
+            pages = [p for p in pages if p.get("id") == args.page_id]
+            if not pages:
+                die("Khong thay Page ID %s trong danh sach ban quan ly." % args.page_id)
+        if len(pages) > 1:
+            die("Co %d Page. Chay 'pages' roi chon bang --page-id." % len(pages))
         if not pages:
-            die("Khong thay Page ID %s trong danh sach ban quan ly." % args.page_id)
-    if len(pages) > 1:
-        die("Co %d Page. Chay 'pages' roi chon bang --page-id." % len(pages))
+            die("Token khong quan ly Page nao.")
+        pg = pages[0]
+        page_token, pid, pname = pg["access_token"], pg["id"], pg.get("name")
+    elif ttype == "PAGE":
+        page_token = long_token
+        me = call("me", page_token, params={"fields": "id,name"})
+        pid, pname = me.get("id"), me.get("name")
+        if args.page_id and pid != args.page_id:
+            die("Token nay thuoc Page %s, khong phai %s." % (pid, args.page_id))
+    else:
+        die("Loai token '%s' khong dung de dang bai duoc. Can USER hoac PAGE." % ttype)
 
-    pg = pages[0]
-    page_token = pg["access_token"]
-    print("        OK -> Page '%s' (%s)" % (pg.get("name"), pg.get("id")))
+    print("                OK -> Page '%s' (%s)" % (pname, pid))
 
-    updates = {"FB_PAGE_ID": pg["id"], "FB_PAGE_TOKEN": page_token}
-    if user_token != token:
+    final_type, exp = token_type(page_token)
+    updates = {"FB_PAGE_ID": pid, "FB_PAGE_TOKEN": page_token}
+    if user_token:
         updates["FB_USER_TOKEN"] = user_token
     write_env(updates)
-    print("\nDa luu vao .env.local: %s" % ", ".join(sorted(updates)))
-    print("Page token: %s (do dai %d)" % (mask(page_token), len(page_token)))
-    print("\nKiem tra lai bang: python tools/fb_page.py token-info")
+
+    print("\nDa luu vao .env.local : %s" % ", ".join(sorted(updates)))
+    print("Page token            : %s (loai %s)" % (mask(page_token), final_type))
+    if exp == 0:
+        print("Het han               : KHONG BAO GIO - da xong.")
+    else:
+        import datetime
+        print("Het han               : %s" % datetime.datetime.fromtimestamp(exp))
+        print("\nVAN CON HAN. Page token vinh vien phai sinh ra tu long-lived USER token.")
+        print("Lay user token moi tai Graph API Explorer, dat vao FB_USER_TOKEN roi chay lai.")
 
 
 def cmd_info(args, page_id, token):
