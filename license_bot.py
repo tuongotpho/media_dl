@@ -23,6 +23,7 @@ import urllib.error
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app.license import generate_license_key, record_approved_key
+import admin_publish
 
 # ---- Cau hinh ----
 BOT_TOKEN = "8870394330:AAGzPWicK_EMBygfF0xRpNJQP9bNCP_IlOI"
@@ -167,17 +168,26 @@ def handle_callback(callback_query):
         days = int(parts[2]) if len(parts) > 2 else 365
 
         key, expiry = generate_license_key(machine_id, days)
-        record_approved_key(machine_id, key)
+        record_approved_key(machine_id, key)   # ban sao cuc bo, chi dung khi cung may
+
+        # Duong that su den may khach: dua key len Realtime Database.
+        try:
+            admin_publish.publish_key(machine_id, key, expiry, days)
+            delivery = "⚡ Key đã lên server — app của khách tự mở khoá trong vài giây."
+        except Exception as pub_err:
+            delivery = ("⚠️ *KHÔNG đưa được key lên server:* `%s`\n"
+                        "Hãy gửi key trên cho khách dán tay vào app." % pub_err)
+            print("[Bot] publish_key that bai: %s" % pub_err)
 
         # Sua tin nhan cu thanh da duyet
         edit_message(chat_id, message_id,
-            f"✅ *ĐÃ DUYỆT & TỰ ĐỘNG KÍCH HOẠT*\n\n"
+            f"✅ *ĐÃ DUYỆT*\n\n"
             f"🖥 Mã máy: `{machine_id}`\n"
             f"🔐 Key: `{key}`\n"
             f"📅 Hết hạn: *{expiry.strftime('%d/%m/%Y')}*\n\n"
-            f"⚡ Khóa bản quyền đã được tự động truyền về phần mềm!")
+            f"{delivery}")
 
-        answer_callback(cb_id, "✅ Đã duyệt & Kích hoạt tự động!")
+        answer_callback(cb_id, "✅ Đã duyệt — gửi key cho khách")
         print(f"[Bot] Approved: {machine_id} -> {key} (expires {expiry})")
 
     elif action == "reject" and len(parts) >= 2:

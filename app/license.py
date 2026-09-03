@@ -255,6 +255,21 @@ def check_and_apply_approved_key(machine_id: str = None) -> dict:
         machine_id = get_machine_id()
     machine_id = machine_id.upper().strip()
 
+    # Hoi server truoc: day moi la duong ma khach that su nhan duoc key.
+    # File approved_keys.json cuc bo chi dung khi admin va app cung mot may.
+    try:
+        from . import remote_activation
+        remote_key = remote_activation.poll_if_pending(machine_id)
+        if remote_key:
+            val = validate_license_key(remote_key, machine_id)
+            if val["valid"]:
+                save_license(remote_key)
+                remote_activation.clear_pending()
+                return {"approved": True, "key": remote_key,
+                        "expiry": val.get("expiry"), "source": "server"}
+    except Exception:
+        pass
+
     path = _approved_keys_path()
     if not os.path.isfile(path):
         return {"approved": False}

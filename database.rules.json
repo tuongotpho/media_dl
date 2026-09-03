@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "approved": {
+      "$machine_id": {
+        ".read": true,
+        ".write": false
+      }
+    }
+  }
+}

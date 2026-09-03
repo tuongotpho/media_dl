@@ -16,6 +16,7 @@ from .license import get_license_status, validate_license_key, save_license, get
 from .license import FULL_LIMITS
 from . import engine
 from . import history as history_store
+from . import remote_activation
 
 app = FastAPI(title="Media Download Studio", version="1.0.0")
 
@@ -162,9 +163,12 @@ async def request_activation(payload: LicenseRequestPayload = LicenseRequestPayl
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             if resp.status == 200:
+                # Bat dau hoi server cho key duyet. Chi hoi khi da gui yeu cau,
+                # de may chi dung ban mien phi khong goi mang vo ich.
+                remote_activation.mark_pending(machine_id, payload.plan)
                 return {
                     "success": True,
-                    "message": "Đã gửi yêu cầu đến admin. Vui lòng chờ phê duyệt."
+                    "message": "Đã gửi yêu cầu đến admin. App sẽ tự mở khoá ngay khi được duyệt."
                 }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Không gửi được: {e}")
