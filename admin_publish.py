@@ -59,13 +59,23 @@ def _token() -> str:
     from google.auth.transport.requests import Request
 
     if _credentials is None:
-        path = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "")
-        if not path or not os.path.isfile(path):
+        # Tren may admin: duong dan toi file JSON.
+        # Tren server (Render...): dan nguyen noi dung JSON vao bien moi truong,
+        # vi server khong co cho de file.
+        raw = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON", "").strip()
+        path = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "").strip()
+
+        if raw:
+            _credentials = service_account.Credentials.from_service_account_info(
+                json.loads(raw), scopes=SCOPES)
+        elif path and os.path.isfile(path):
+            _credentials = service_account.Credentials.from_service_account_file(
+                path, scopes=SCOPES)
+        else:
             raise RuntimeError(
-                "Thieu FIREBASE_SERVICE_ACCOUNT trong .env.local, hoac duong dan sai.\n"
-                "Tro toi file JSON service account tai tu Firebase Console.")
-        _credentials = service_account.Credentials.from_service_account_file(
-            path, scopes=SCOPES)
+                "Thieu thong tin service account. Dat MOT trong hai:\n"
+                "  FIREBASE_SERVICE_ACCOUNT_JSON = toan bo noi dung file JSON\n"
+                "  FIREBASE_SERVICE_ACCOUNT      = duong dan toi file JSON")
 
     if not _credentials.valid:
         _credentials.refresh(Request())

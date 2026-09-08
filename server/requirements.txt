@@ -1,0 +1,5 @@
+# Chi cho may chu duyet ban quyen tren Render.
+# KHONG dung cho app desktop (xem requirements.txt o thu muc goc).
+fastapi>=0.110.0
+uvicorn>=0.29.0
+google-auth>=2.30.0

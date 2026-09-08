@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: mds-license-server
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r server/requirements.txt
+    startCommand: uvicorn server.webhook:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      # Dat gia tri that trong Render Dashboard > Environment.
+      # Tuyet doi khong ghi gia tri vao file nay: file nay len GitHub.
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_CHAT_ID
+        sync: false
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: FIREBASE_DB_URL
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
