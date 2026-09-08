@@ -3,3 +3,6 @@
 fastapi>=0.110.0
 uvicorn>=0.29.0
 google-auth>=2.30.0
+# google.auth.transport.requests bat buoc phai co goi requests. May cua
+# admin co san no nen chay duoc, con Render thi khong -> phai khai ro.
+requests>=2.31.0
