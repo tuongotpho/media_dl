@@ -35,9 +35,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.license import generate_license_key          # noqa: E402
 import admin_publish                                  # noqa: E402
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "")
-WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
+# .strip() vi dan gia tri vao o cua Render rat de dinh khoang trang hoac
+# xuong dong o cuoi, va khi do phep so sanh chat id se sai ma khong bao gi.
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "").strip()
+ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "").strip()
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "").strip()
 TELEGRAM_API = "https://api.telegram.org/bot%s" % BOT_TOKEN
 
 PLAN_LABELS = {
@@ -59,6 +61,17 @@ def tg(method: str, payload: dict) -> dict:
     )
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
+            return json.loads(r.read())
+    except Exception as e:
+        print("[tg] %s that bai: %s" % (method, e), flush=True)
+        return {"ok": False}
+
+
+def tg_get(method: str) -> dict:
+    """Goi Telegram bang GET, dung cho cac lenh khong can tham so."""
+    try:
+        with urllib.request.urlopen(
+                "%s/%s" % (TELEGRAM_API, method), timeout=20) as r:
             return json.loads(r.read())
     except Exception as e:
         print("[tg] %s that bai: %s" % (method, e), flush=True)
@@ -233,3 +246,49 @@ async def health():
         "firebase_db": "đã đặt" if os.environ.get("FIREBASE_DB_URL") else "CHƯA ĐẶT",
         "service_account": "đã đặt" if os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON") else "CHƯA ĐẶT",
     }
+
+
+@app.get("/diag")
+async def diag():
+    """Tu kiem tra tung manh cau hinh.
+
+    "Da dat" chua co nghia la "dat dung": token co the la ban da bi huy,
+    chat id co the go nham, JSON service account co the dan thieu. Cho may
+    chu tu thu tung thu roi bao ket qua, khoi phai doan.
+
+    Khong lo bi mat: chi in ten bot, ma chat id (von chi la mot so), va
+    dia chi email cua service account.
+    """
+    out = {}
+
+    # 1. Token co goi duoc Telegram khong
+    me = tg_get("getMe")
+    if me.get("ok"):
+        out["bot_token"] = "OK — @%s" % me["result"].get("username")
+    else:
+        out["bot_token"] = "HỎNG — Telegram từ chối token này (đã bị huỷ, hoặc dán sai)"
+
+    # 2. Chat id
+    out["admin_chat_id"] = ADMIN_CHAT_ID or "CHƯA ĐẶT"
+    out["admin_chat_id_hop_le"] = ADMIN_CHAT_ID.lstrip("-").isdigit()
+
+    # 3. Service account
+    raw = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON", "").strip()
+    if not raw:
+        out["service_account"] = "CHƯA ĐẶT"
+    else:
+        try:
+            sa = json.loads(raw)
+            out["service_account"] = "OK — %s" % sa.get("client_email", "?")
+        except Exception as e:
+            out["service_account"] = "HỎNG — JSON không đọc được (dán thiếu?): %s" % e
+
+    # 4. Ghi thu vao Realtime Database
+    try:
+        admin_publish.publish_key("DIAGSELFTEST", "MDS-DIAG-ONLY", "2000-01-01", 0)
+        admin_publish.revoke_key("DIAGSELFTEST")
+        out["firebase_ghi_duoc"] = "OK"
+    except Exception as e:
+        out["firebase_ghi_duoc"] = "HỎNG — %s" % e
+
+    return out
