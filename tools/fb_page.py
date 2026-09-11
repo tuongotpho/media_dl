@@ -333,6 +333,12 @@ def cmd_photo(args, page_id, token):
           % (res.get("post_id", "-"), res.get("id", "-")))
 
 
+def cmd_comment(args, page_id, token):
+    """Binh luan duoi mot bai (dung de dat link tai o binh luan dau tien)."""
+    res = call("%s/comments" % args.post_id, token, data={"message": args.message})
+    print("Da binh luan: %s" % res.get("id", "?"))
+
+
 def cmd_posts(args, page_id, token):
     res = call("%s/posts" % page_id, token, params={
         "fields": "id,created_time,message,permalink_url,shares",
@@ -372,6 +378,10 @@ def main():
     p.add_argument("-c", "--caption", help="Chu thich")
     p.add_argument("--draft", action="store_true", help="Luu nhap, khong dang cong khai")
 
+    p = sub.add_parser("comment", help="Binh luan duoi mot bai da dang")
+    p.add_argument("-p", "--post-id", required=True, help="ID bai dang (dang <page>_<post>)")
+    p.add_argument("-m", "--message", required=True)
+
     p = sub.add_parser("posts", help="Liet ke cac bai dang gan day")
     p.add_argument("-n", "--limit", type=int, default=10)
 
@@ -385,6 +395,7 @@ def main():
         "info": cmd_info,
         "post": cmd_post,
         "photo": cmd_photo,
+        "comment": cmd_comment,
         "posts": cmd_posts,
     }
     handlers[args.cmd](args, page_id, token)
