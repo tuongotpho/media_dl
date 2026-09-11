@@ -56,3 +56,6 @@ engine.old/
 
 # Lich su tai cuc bo cua nguoi dung
 history.json
+
+# Trang thai hen gio bai fanpage (chua post_id, khong can chia se)
+content/scheduled.json

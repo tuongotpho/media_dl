@@ -1,0 +1,128 @@
+{
+  "start_date": "2026-09-12",
+  "post_time": "20:00",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "tags": "#taivideo #phanmemtaivideo #mediadownloadstudio",
+  "posts": [
+    {
+      "day": 1, "kind": "Nêu vấn đề", "card": "Sáu phút cho một video ba phút",
+      "body": "Bạn dán link vào một web tải video.\nBấm Download.\nBung ra 4 tab quảng cáo.\nQuay lại, bấm tiếp. Bung thêm 2 tab.\nLần thứ ba mới ra file — 720p, nặng 40MB, tiếng lệch hình.\n\nĐó là sáu phút cho một video ba phút.\n\nPhần mềm chạy trên máy thì khác. Dán link, chọn chất lượng, tải. Không tab lạ, không đếm ngược, không giới hạn dung lượng — vì không có ai phải trả tiền băng thông server để bù bằng quảng cáo.\n\nMáy bạn nối thẳng tới nguồn. Nhanh hơn, và không ai nhìn thấy bạn tải gì."
+    },
+    {
+      "day": 2, "kind": "Kỹ thuật", "card": "Vì sao \"4K\" mở ra chỉ 720p",
+      "body": "Thử nghiệm nhỏ: tải cùng một video bằng ba công cụ, rồi chuột phải → Thuộc tính, xem kích thước khung hình thật.\n\nKết quả quen thuộc: chỗ ghi 4K cho ra 1280×720.\n\nLý do nằm ở cách các nền tảng lưu video. Họ tách thành nhiều luồng riêng — hình một luồng, tiếng một luồng. Muốn có 4K thật thì phải tải cả hai rồi ghép lại bằng FFmpeg.\n\nCông cụ nào lười bước ghép sẽ lấy đại luồng có sẵn cả hình lẫn tiếng. Mà luồng đó tối đa chỉ 720p. Nhãn vẫn ghi 4K vì nó đọc từ trang gốc, không phải từ file đã tải.\n\nMedia Download Studio ghép sẵn. Nhãn ghi 3840×2160 thì file mở ra đúng 3840×2160. Kiểm tra được bằng chuột phải."
+    },
+    {
+      "day": 3, "kind": "Hướng dẫn", "card": "Ba bước, không có bước thứ tư",
+      "body": "Toàn bộ thao tác:\n\n1. Copy link video\n2. Dán vào ô, bấm Phân Tích\n3. Chọn chất lượng, bấm Tải\n\nThanh tiến trình hiện phần trăm, tốc độ MB/s và thời gian còn lại thật — không phải kiểu vòng quay vô tận rồi báo lỗi ở giây cuối.\n\nVideo 4K dài 5 phút, mạng 100Mbps: khoảng 40 giây.\n\nTải xong bấm Mở Thư Mục là ra file ngay trong Explorer."
+    },
+    {
+      "day": 4, "kind": "Tính năng", "card": "Video dọc tải về vẫn dọc",
+      "body": "Reel, TikTok, Shorts — toàn video dọc 1080×1920. Nhiều công cụ tải về lại ra bản ngang bị cắt hai bên, hoặc bản 540×960 mờ tịt, vì chúng đo chất lượng bằng chiều cao mà không nhìn chiều rộng.\n\nMedia Download Studio đo bằng cạnh ngắn — cách mà mọi người vẫn hiểu \"1080p\". Reel 1080×1920 được tính đúng là 1080p, tải về nguyên khung, không cắt, không mờ.\n\nLỗi này chúng tôi tự tìm ra khi test với một reel bóng đá. Sửa xong cùng ngày."
+    },
+    {
+      "day": 5, "kind": "Xử lý nghi ngờ", "card": "\"File exe lạ, có virus không?\"",
+      "body": "Đây là câu hỏi mình nhận nhiều nhất. Và là câu hỏi đúng — bạn nên hỏi thế với mọi phần mềm lạ.\n\nNhững gì bạn tự kiểm tra được, không cần tin lời mình:\n\n• Mã nguồn công khai trên GitHub. Ai biết đọc code đều xem được app làm gì với máy bạn.\n• Chạy portable. Giải nén là chạy, không dịch vụ chạy nền, xoá thư mục là gần như sạch. App ghi đúng một khoá Registry để đánh dấu bảy ngày dùng thử, ngoài ra không ghi gì khác.\n• Không quảng cáo, không cài kèm phần mềm khác, không thanh công cụ trình duyệt.\n\nWindows SmartScreen vẫn sẽ cảnh báo, vì mình chưa mua chứng chỉ ký số — cái đó tốn vài trăm đô mỗi năm. Bấm Thông tin thêm rồi Vẫn chạy.\n\nĐừng tin lời hứa của ai. Kiểm tra."
+    },
+    {
+      "day": 6, "kind": "Giải thích", "card": "Miễn phí vĩnh viễn — nghĩa là gì",
+      "body": "Không phải \"dùng thử rồi khoá\". Không phải \"miễn phí có quảng cáo\".\n\nBản miễn phí của Media Download Studio dùng mãi mãi, không đếm ngược, không banner. Bạn tải được video 1080p, nhạc MP3 128kbps, từng file một. Đủ cho phần lớn nhu cầu hằng ngày.\n\nBảy ngày đầu mở khoá toàn bộ — 4K/8K, MP3 320kbps, tải bốn file cùng lúc — để bạn biết bản trả phí khác gì trước khi quyết định.\n\nSau bảy ngày, app không hỏi gì, không nhắc gì. Chỉ những mức trên 1080p hiện ổ khoá. Muốn mở thì mở, không thì thôi."
+    },
+    {
+      "day": 7, "kind": "Giá", "card": "Trả một lần, dùng mãi",
+      "body": "Phần mềm cùng loại của nước ngoài thường bán 15–45 USD, tức khoảng 380.000 đến 1.100.000₫. Phần lớn tính theo năm, hết hạn phải trả tiếp.\n\nMedia Download Studio:\n• Miễn phí — 0₫, dùng mãi mãi, tối đa 1080p\n• 6 tháng — 19.000₫\n• 1 năm — 29.000₫\n• Vĩnh viễn — 99.000₫\n\n99.000₫ trả một lần, dùng mãi, mọi bản cập nhật sau này miễn phí.\n\nRẻ vì mình là người Việt làm cho người Việt dùng. Không chi phí marketing quốc tế, không đội ngũ bán hàng, không nhà đầu tư đòi tăng trưởng mỗi quý."
+    },
+    {
+      "day": 8, "kind": "Tình huống", "card": "Lớp học không có mạng",
+      "body": "Một cô giáo nhắn: phòng học ở trường không có wifi, muốn chiếu video minh hoạ cho học sinh mà cứ phải dùng 4G điện thoại rồi phát qua màn hình, giật lag.\n\nGiải pháp đơn giản hơn nhiều: tải sẵn ở nhà, chép vào USB, tới lớp cắm vào máy chiếu. Video 1080p, không cần mạng, không giật.\n\nBản miễn phí làm được việc này. Không cần trả gì.\n\nNếu bạn dạy học, làm thuyết trình, hay hay phải chiếu video ở chỗ không có mạng — đây là lý do app này tồn tại."
+    },
+    {
+      "day": 9, "kind": "Hỏi", "card": "Bạn hay tải video từ đâu?",
+      "body": "Câu hỏi thật, không phải để bán hàng.\n\nNền tảng nào bạn hay cần tải video về nhất?\n\n1. YouTube\n2. TikTok\n3. Facebook\n4. Instagram\n5. Chỗ khác — kể tên bên dưới\n\nMình đang xếp thứ tự ưu tiên test cho các bản cập nhật. Nền tảng nào được nhắc nhiều thì test kỹ trước."
+    },
+    {
+      "day": 10, "kind": "Người làm nội dung", "card": "Dành cho người làm nội dung",
+      "body": "Video bạn tự đăng lên TikTok, giờ muốn lấy lại để dựng clip tổng hợp hoặc đăng chéo sang nền tảng khác.\n\nTải thẳng từ ứng dụng thì dính watermark chạy qua chạy lại giữa hình. Dựng lại rất xấu, mà đăng sang nơi khác thì nền tảng đó nhận ra ngay và giảm tiếp cận.\n\nMedia Download Studio lấy bản gốc không logo, giữ nguyên độ phân giải.\n\nChỉ nên dùng với video của chính bạn, hoặc nội dung bạn có quyền sử dụng."
+    },
+    {
+      "day": 11, "kind": "Tính năng", "card": "Nghe offline, không tốn 4G",
+      "body": "Danh sách 50 bài, đi đường không sóng, mở 4G thì tiếc.\n\nTách sẵn MP3 để trong máy, cắm tai nghe là chạy, không cần mạng.\n\nBản miễn phí cho 128kbps — nghe bình thường không thấy khác. Bản trả phí cho 320kbps, mức mà tai thường gần như không phân biệt được với bản gốc.\n\nTrong app chỉ cần chọn Âm thanh thay vì Video, phần còn lại tự động.\n\nDùng cho nội dung bạn có quyền lưu trữ."
+    },
+    {
+      "day": 12, "kind": "Hậu trường", "card": "Vì sao app tải video hay \"chết\" sau vài tháng",
+      "body": "Bạn từng cài một app tải video, dùng ngon lành, rồi ba tháng sau tự nhiên báo lỗi với mọi link?\n\nKhông phải app hỏng. YouTube, TikTok, Facebook đổi cách phục vụ video vài tháng một lần — cố tình, để chặn công cụ tải. Engine bên trong app cần được vá theo. App nào không tự cập nhật engine thì \"chết\" đúng lúc đó.\n\nMedia Download Studio kiểm tra engine mỗi lần mở. Có bản mới là tự tải về, không cần bạn cài lại app. Gặp lỗi kiểu \"trang nguồn đã đổi\" thì nó tự cập nhật ngay rồi bảo bạn thử lại.\n\nĐây là tính năng tốn nhiều công nhất, và là thứ khiến gói vĩnh viễn có nghĩa thật."
+    },
+    {
+      "day": 13, "kind": "Tính năng", "card": "Lịch sử tải — kể cả lần hỏng",
+      "body": "Tab Lịch Sử Tải ghi lại mọi lần bạn bấm tải: thành công hay thất bại, chất lượng nào, từ trang nào, dung lượng bao nhiêu.\n\nLần nào hỏng thì hiện đúng câu lỗi và nút Thử lại — bấm là app tự điền link, phân tích lại. Không phải đi tìm link cũ.\n\nFile bạn đã xoá khỏi máy thì lịch sử ghi \"đã xoá\", không đưa link chết.\n\nChuyện nhỏ, nhưng là chuyện bạn sẽ dùng mỗi ngày."
+    },
+    {
+      "day": 14, "kind": "Hậu trường", "card": "Kích hoạt trong vài giây, không cần mình ngồi máy",
+      "body": "Khi bạn mua gói, luồng chạy thế này:\n\nBạn bấm Gửi Yêu Cầu trong app → điện thoại mình nhận thông báo Telegram → mình bấm Duyệt → app của bạn tự mở khoá.\n\nMình đang ăn cơm, đi đường, hay nửa đêm — bấm một cái là xong. Không cần gửi key qua tin nhắn, không cần bạn gõ gì.\n\nKey khoá theo máy bạn, nên có lộ ra ngoài cũng không ai dùng được.\n\nMình xây phần này mất hơn một tuần. Chỉ để bạn không phải chờ."
+    },
+    {
+      "day": 15, "kind": "Tính năng", "card": "Chép vào USB, mang đi đâu cũng chạy",
+      "body": "Media Download Studio không cần cài đặt. Giải nén ra một thư mục là chạy.\n\nChép thư mục đó vào USB, cắm sang máy khác — vẫn chạy, video đã tải đi theo luôn vì thư mục downloads nằm ngay cạnh file exe.\n\nMáy công ty không cho cài phần mềm? Chạy từ USB.\nMượn máy bạn? Chạy từ USB, rút ra là sạch.\n\nMuốn gỡ thì xoá thư mục. Không có bước gỡ cài đặt, không có gì sót lại."
+    },
+    {
+      "day": 16, "kind": "Cá nhân", "card": "Tại sao mình viết app này",
+      "body": "Mình không định làm sản phẩm. Mình chỉ cần tải vài video tư liệu để dựng, và mọi công cụ mình thử đều tệ theo một kiểu nào đó.\n\nWeb online thì quảng cáo và file giả 4K. Extension trình duyệt thì cứ vài tuần lại bị gỡ. App nước ngoài thì tiếng Anh, giá theo năm, và cũng chết mỗi khi YouTube đổi.\n\nNên mình viết một cái cho mình. Rồi cho bạn bè. Rồi họ hỏi có bán không.\n\nGiờ nó ở đây. Bản miễn phí dùng mãi, bản trả phí 19 nghìn. Nếu bạn thấy nó hữu ích, cứ dùng. Nếu thấy thiếu gì, nhắn mình."
+    },
+    {
+      "day": 17, "kind": "So sánh", "card": "Extension trình duyệt vs phần mềm",
+      "body": "Extension tải video tiện thật — bấm ngay trên trang. Nhưng có ba vấn đề mình gặp hoài:\n\n1. Cửa hàng Chrome gỡ chúng liên tục vì vi phạm chính sách. Cài xong vài tuần là mất.\n2. Đa số chỉ lấy được luồng có sẵn cả hình lẫn tiếng — tối đa 720p. Không ghép được 4K.\n3. Chúng đọc được mọi trang bạn mở. Extension miễn phí thường sống bằng cách bán dữ liệu duyệt web.\n\nPhần mềm chạy riêng thì không có ba chuyện đó. Không nằm trong trình duyệt, không bị gỡ, không thấy bạn xem gì."
+    },
+    {
+      "day": 18, "kind": "Mẹo", "card": "Lấy link từ điện thoại sang máy tính",
+      "body": "Nhiều bạn hỏi: video thấy trên điện thoại, làm sao tải bằng máy tính?\n\nCách nhanh nhất:\n\n• TikTok / Instagram / Facebook: bấm Chia sẻ → Sao chép liên kết\n• YouTube: bấm Chia sẻ → Sao chép\n\nRồi gửi link cho chính mình qua Zalo hoặc Messenger, mở trên máy tính, dán vào app.\n\nMẹo nhỏ: Zalo có mục \"Cloud của tôi\" — gửi link vào đó, mở Zalo trên máy tính là thấy ngay, không làm phiền ai."
+    },
+    {
+      "day": 19, "kind": "Tính năng", "card": "Tải hỏng? Một nút, admin nhận đủ thông tin",
+      "body": "Phần mềm nào cũng có lúc lỗi. Khác nhau là lúc lỗi thì sao.\n\nTrong Media Download Studio, khi tải hỏng sẽ hiện nút Báo lỗi cho admin. Bấm một cái, mình nhận được ngay: link video, chất lượng bạn chọn, câu lỗi đầy đủ, phiên bản engine, và gói bạn đang dùng.\n\nBạn không phải mô tả gì, không phải chụp màn hình, không phải nhắn \"nó không tải được\".\n\nBáo cáo chỉ gửi khi bạn bấm nút. Không gửi tự động, không gửi gì khi bạn không bấm."
+    },
+    {
+      "day": 20, "kind": "Niềm tin", "card": "App không gửi gì đi khi bạn không bấm",
+      "body": "Nói rõ cho minh bạch:\n\nMedia Download Studio chỉ kết nối ra ngoài trong ba trường hợp — khi bạn tải video, khi bạn bấm Gửi Yêu Cầu Kích Hoạt, và khi bạn bấm Báo lỗi. Cộng thêm một lần kiểm tra bản cập nhật engine lúc mở app.\n\nKhông có thống kê sử dụng. Không có ID theo dõi. Không biết bạn tải gì, tải bao nhiêu.\n\nMã nguồn công khai, bạn kiểm chứng được câu này."
+    },
+    {
+      "day": 21, "kind": "Ưu đãi", "card": "30 suất vĩnh viễn 99.000₫",
+      "body": "Gói vĩnh viễn 99.000₫ mở cho 30 người đầu tiên, đến hết Chủ nhật tuần này.\n\nTrả một lần, dùng trọn đời, mọi bản cập nhật sau này miễn phí.\n\nCách lấy:\n1. Tải app, dùng bảy ngày mở khoá đầy đủ trước cho chắc\n2. Ưng thì chuyển khoản MBBank 938118 — LE VIET THANH, nội dung ghi: MDS [Mã máy]\n3. Bấm nút Gửi Yêu Cầu Kích Hoạt ngay trong app\n4. Mình bấm duyệt, app tự mở khoá trong vài giây\n\nKhông ưng thì thôi. Bản miễn phí vẫn dùng được mãi mãi."
+    },
+    {
+      "day": 22, "kind": "Tình huống", "card": "Video kỷ niệm không ở mãi trên mạng",
+      "body": "Tài khoản Facebook của một người bác mình mất năm ngoái — bị hack, không lấy lại được. Mấy trăm video gia đình trong đó cũng mất theo.\n\nMạng xã hội không phải kho lưu trữ. Tài khoản bị khoá, nền tảng đổi chính sách, người đăng xoá đi — video biến mất, không báo trước.\n\nNếu có video nào bạn không muốn mất — đám cưới, con lúc nhỏ, ông bà — tải về, chép ra ổ cứng. Mất mười giây.\n\nBản miễn phí làm được. Đây là việc nên làm hôm nay, không phải lúc đã muộn."
+    },
+    {
+      "day": 23, "kind": "Hỏi đáp", "card": "Windows báo \"ứng dụng không xác định\"",
+      "body": "Mở app lần đầu, Windows hiện màn hình xanh: \"Windows đã bảo vệ PC của bạn\". Nhiều bạn dừng ở đây.\n\nMàn hình đó là SmartScreen. Nó hiện với mọi phần mềm chưa mua chứng chỉ ký số của Microsoft — khoảng 300–500 USD một năm. Không phải dấu hiệu virus, chỉ là dấu hiệu \"chưa đóng phí\".\n\nCách qua: bấm Thông tin thêm → Vẫn chạy. Chỉ phải làm một lần.\n\nNếu muốn chắc, quét file bằng VirusTotal trước — miễn phí, 70 engine diệt virus cùng quét."
+    },
+    {
+      "day": 24, "kind": "Tính năng", "card": "Bốn file cùng lúc",
+      "body": "Bản trả phí tải tối đa bốn file song song. Dán bốn link, bấm bốn lần, xong cả bốn.\n\nBản miễn phí tải từng file một — đủ dùng khi thỉnh thoảng tải một hai video.\n\nKhi nào bốn luồng đáng tiền? Khi bạn tải cả loạt video bài giảng, cả playlist nhạc, hay gom tư liệu cho một dự án. Lúc đó chênh lệch là mười phút với bốn mươi phút.\n\nGói 6 tháng 19.000₫ mở tính năng này."
+    },
+    {
+      "day": 25, "kind": "Hỏi", "card": "Bạn muốn thêm gì?",
+      "body": "Mình đang lên danh sách cho bản 1.2.\n\nBa thứ đang cân nhắc:\n• Tải cả playlist một lần\n• Tự cắt đoạn video theo phút bắt đầu – kết thúc\n• Đổi tên file theo mẫu tự chọn\n\nBạn cần cái nào nhất? Hoặc thứ khác chưa có trong danh sách?\n\nMình đọc hết bình luận. Cái nào nhiều người cần thì làm trước."
+    },
+    {
+      "day": 26, "kind": "Thẳng thắn", "card": "Những gì app KHÔNG làm được",
+      "body": "Nói trước để bạn không mất công:\n\n• Video Facebook đặt riêng tư hoặc chỉ bạn bè — không tải được. App không đăng nhập tài khoản của bạn, và mình cũng không muốn nó làm thế.\n• Video cần trả phí để xem — không.\n• Livestream đang phát — chưa, chỉ tải được sau khi kết thúc.\n• Netflix, Spotify và các dịch vụ có mã hoá bản quyền — không, và sẽ không bao giờ.\n\nCòn lại — video công khai trên hơn 1.000 trang — tải được."
+    },
+    {
+      "day": 27, "kind": "So sánh", "card": "So với app nước ngoài",
+      "body": "4K Video Downloader, YTD, iTubeGo — mình dùng cả rồi, trước khi tự viết.\n\nChúng làm được việc. Nhưng:\n• Giá 15–45 USD, phần lớn theo năm\n• Giao diện tiếng Anh, hỗ trợ tiếng Anh\n• Cũng chết khi YouTube đổi — và bạn phải chờ họ ra bản vá, tải lại, cài lại\n\nMedia Download Studio: tiếng Việt, 19–99 nghìn, engine tự cập nhật, và người trả lời tin nhắn là người viết ra nó.\n\nKhông nói app mình hơn. Chỉ nói nó phù hợp hơn với người Việt."
+    },
+    {
+      "day": 28, "kind": "Hướng dẫn", "card": "Nâng cấp trong bốn bước",
+      "body": "Nếu bạn đã dùng thử và muốn mở 4K/8K:\n\n1. Trong app, bấm huy hiệu Bản Miễn Phí góc trên phải\n2. Chọn gói — 6 tháng, 1 năm, hay vĩnh viễn\n3. Chuyển khoản theo số tài khoản và nội dung app hiện sẵn — nội dung có mã máy của bạn, đừng sửa\n4. Bấm Gửi Yêu Cầu Kích Hoạt\n\nRồi đợi. Thường dưới một phút. App tự mở khoá, hiện thông báo, không phải làm gì thêm.\n\nNếu quá 15 phút chưa thấy gì, nhắn mình qua Telegram kèm mã máy."
+    },
+    {
+      "day": 29, "kind": "Cập nhật", "card": "Bản 1.1 có gì mới",
+      "body": "Bản 1.1 vừa phát hành. Những thay đổi bạn sẽ thấy:\n\n• Bản miễn phí dùng vĩnh viễn thay vì khoá sau 7 ngày\n• Engine tự cập nhật — không còn \"chết\" khi trang nguồn đổi\n• Video dọc tải về đúng khung, không bị cắt\n• Tab Lịch Sử Tải mới, có nút thử lại\n• Nút Báo lỗi cho admin\n• Kích hoạt tự động thật sự chạy được\n\nVà một loạt sửa lỗi nhỏ. Ai đang dùng bản 1.0 nên tải lại — link ở trang chủ."
+    },
+    {
+      "day": 30, "kind": "Cảm ơn", "card": "30 ngày đầu tiên",
+      "body": "Trang này đăng bài mỗi ngày suốt 30 ngày qua. Hôm nay là bài cuối của loạt.\n\nCảm ơn những người đã tải, đã dùng, đã nhắn góp ý, và cả những người nghi ngờ rồi tự kiểm tra mã nguồn. Nghi ngờ là đúng — mình để mã công khai chính vì thế.\n\nApp vẫn ở đây, bản miễn phí vẫn miễn phí, và mình vẫn đọc mọi bình luận.\n\nNếu nó hữu ích với bạn, chia sẻ cho một người bạn nghĩ cũng cần. Đó là cách duy nhất một phần mềm nhỏ của người Việt đi được xa."
+    }
+  ]
+}
