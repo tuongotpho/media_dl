@@ -774,7 +774,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRequestActivation.addEventListener('click', async () => {
             btnRequestActivation.disabled = true;
             btnRequestActivation.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Gửi Yêu Cầu...';
-            requestFeedback.classList.add('hidden');
+            requestFeedback.className = 'request-feedback-text';
+            requestFeedback.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Đang kết nối máy chủ...';
+            requestFeedback.classList.remove('hidden');
+
+            // May chu mien phi ngu khi khong ai goi, lan dau day mat ~1 phut.
+            // Bao truoc de nguoi dung khong tuong la treo roi tat app.
+            const slowNotice = setTimeout(() => {
+                requestFeedback.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Máy chủ đang khởi động, có thể mất tới một phút. Vui lòng đợi, đừng tắt app...';
+            }, 6000);
 
             try {
                 const res = await fetch('/api/license/request', {
@@ -799,11 +807,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (err) {
                 requestFeedback.className = 'request-feedback-text error';
-                requestFeedback.textContent = 'Lỗi kết nối server.';
+                requestFeedback.textContent = 'Mất kết nối với app. Thử lại sau vài giây.';
                 requestFeedback.classList.remove('hidden');
             } finally {
+                clearTimeout(slowNotice);
                 btnRequestActivation.disabled = false;
-                btnRequestActivation.innerHTML = '<i class="fa-paper-plane"></i> Gửi Yêu Cầu Kích Hoạt Tự Động Đến Admin';
+                btnRequestActivation.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Gửi Yêu Cầu Kích Hoạt Tự Động Đến Admin';
             }
         });
     }

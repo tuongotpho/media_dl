@@ -29,28 +29,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---- Telegram Bot Config ----
-BOT_TOKEN = "8870394330:AAGzPWicK_EMBygfF0xRpNJQP9bNCP_IlOI"
-TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
-DEFAULT_ADMIN_CHAT_ID = 5056715300
+# ---- May chu ban quyen ----
+#
+# App KHONG con giu bot token. Truoc day app tu goi Telegram nen token nam
+# trong moi file .exe phat hanh; ai giai nen cung lay duoc va tu duyet ban
+# quyen cho minh. Gio app goi may chu tren Render, may chu moi goi Telegram.
+# Xem server/webhook.py.
+LICENSE_SERVER = os.environ.get(
+    "MDS_LICENSE_SERVER", "https://mds-license-server.onrender.com").strip().rstrip("/")
 
-
-def _get_admin_chat_id():
-    """Doc admin chat_id tu bot_config.json voi fallback."""
-    config_paths = [
-        os.path.join(base_dir(), "bot_config.json"),
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bot_config.json"),
-    ]
-    for path in config_paths:
-        if os.path.isfile(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    chat_id = json.load(f).get("admin_chat_id")
-                    if chat_id:
-                        return chat_id
-            except Exception:
-                pass
-    return DEFAULT_ADMIN_CHAT_ID
+# Goi mien phi cua Render ngu sau 15 phut khong ai goi, lan goi dau mat
+# ~50 giay de day. Timeout phai du rong va thu lai mot lan, khong thi nguoi
+# vua chuyen khoan xong bam nut se thay "khong gui duoc".
+LICENSE_SERVER_TIMEOUT = 75
+LICENSE_SERVER_RETRIES = 2
 
 
 # ---- Pydantic Models ----
@@ -108,72 +100,47 @@ async def activate_license(req: ActivateRequest):
 
 @app.post("/api/license/request")
 async def request_activation(payload: LicenseRequestPayload = LicenseRequestPayload()):
-    """Gui yeu cau kich hoat den admin qua Telegram."""
+    """Gui yeu cau kich hoat len may chu; may chu se nhan cho admin qua Telegram."""
     machine_id = get_machine_id()
-    admin_id = _get_admin_chat_id()
+    body = json.dumps({"machine_id": machine_id, "plan": payload.plan}).encode()
 
-    if not admin_id:
-        raise HTTPException(
-            status_code=503,
-            detail="Chưa cấu hình bot Telegram. Liên hệ admin trực tiếp."
+    def call_server():
+        req = urllib.request.Request(
+            f"{LICENSE_SERVER}/api/request-activation",
+            data=body,
+            headers={"Content-Type": "application/json",
+                     "User-Agent": "MediaDownloadStudio"},
         )
+        with urllib.request.urlopen(req, timeout=LICENSE_SERVER_TIMEOUT) as resp:
+            return json.loads(resp.read().decode("utf-8"))
 
-    plan_names = {
-        "6months": "🥉 Gói 6 Tháng (19.000 VNĐ)",
-        "1year": "🥈 Gói 1 Năm (29.000 VNĐ)",
-        "lifetime": "👑 Gói Vĩnh Viễn (99.000 VNĐ)",
-    }
-    selected_plan_title = plan_names.get(payload.plan, "🥈 Gói 1 Năm (29.000 VNĐ)")
-
-    from datetime import datetime
-    text = (
-        "🔔 *YÊU CẦU KÍCH HOẠT MỚI*\n\n"
-        f"🖥 Mã máy: `{machine_id}`\n"
-        f"📦 Đăng ký: *{selected_plan_title}*\n"
-        f"📅 Thời gian: {datetime.now().strftime('%H:%M %d/%m/%Y')}\n\n"
-        "Chọn nút tương ứng để duyệt:"
-    )
-
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "🥉 Duyệt 6 Tháng (19k)", "callback_data": f"approve:{machine_id}:180"},
-                {"text": "🥈 Duyệt 1 Năm (29k)", "callback_data": f"approve:{machine_id}:365"},
-            ],
-            [
-                {"text": "👑 Duyệt Vĩnh Viễn (99k)", "callback_data": f"approve:{machine_id}:36500"},
-                {"text": "❌ Từ Chối", "callback_data": f"reject:{machine_id}"},
-            ]
-        ]
-    }
-
-    req_payload = json.dumps({
-        "chat_id": admin_id,
-        "text": text,
-        "parse_mode": "Markdown",
-        "reply_markup": keyboard,
-    }).encode()
-
-    req = urllib.request.Request(
-        f"{TELEGRAM_API}/sendMessage",
-        data=req_payload,
-        headers={"Content-Type": "application/json"},
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            if resp.status == 200:
+    last_error = None
+    for attempt in range(LICENSE_SERVER_RETRIES):
+        try:
+            result = await asyncio.to_thread(call_server)
+            if result.get("success"):
                 # Bat dau hoi server cho key duyet. Chi hoi khi da gui yeu cau,
                 # de may chi dung ban mien phi khong goi mang vo ich.
                 remote_activation.mark_pending(machine_id, payload.plan)
-                return {
-                    "success": True,
-                    "message": "Đã gửi yêu cầu đến admin. App sẽ tự mở khoá ngay khi được duyệt."
-                }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Không gửi được: {e}")
+                return result
+            last_error = result.get("message") or result.get("detail") or "Máy chủ từ chối"
+            break
+        except urllib.error.HTTPError as e:
+            try:
+                last_error = json.loads(e.read().decode("utf-8")).get("detail", str(e))
+            except Exception:
+                last_error = f"HTTP {e.code}"
+            if e.code < 500:
+                break           # loi phia minh (400...) thi thu lai vo ich
+        except Exception as e:
+            last_error = str(e)  # timeout, mat mang: thu lai
 
-    raise HTTPException(status_code=500, detail="Không gửi được yêu cầu")
+    raise HTTPException(
+        status_code=502,
+        detail=("Không gửi được yêu cầu đến máy chủ (%s). "
+                "Kiểm tra kết nối mạng rồi thử lại, hoặc liên hệ admin qua Telegram "
+                "@august8787 kèm mã máy %s." % (last_error, machine_id)),
+    )
 
 
 # ---- Engine yt-dlp ----
