@@ -42,6 +42,52 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedFormat = null;
     let eventSource = null;
 
+    // ===================== MODAL THONG BAO =====================
+    // Thay cho alert(): alert() la hop thoai cua Windows, khong doi giao dien
+    // duoc va trong lac long giua app toi.
+    const noticeModal = document.getElementById('notice-modal');
+    const noticeCard = noticeModal ? noticeModal.querySelector('.notice-card') : null;
+    const noticeIcon = document.getElementById('notice-icon');
+    const noticeTitle = document.getElementById('notice-title');
+    const noticeMessage = document.getElementById('notice-message');
+    const noticeDetail = document.getElementById('notice-detail');
+    const noticeOk = document.getElementById('notice-ok');
+
+    const NOTICE_KINDS = {
+        success: { icon: 'fa-check',       btn: 'Tuyệt vời' },
+        premium: { icon: 'fa-crown',       btn: 'Bắt đầu dùng' },
+        error:   { icon: 'fa-xmark',       btn: 'Đã hiểu' },
+        info:    { icon: 'fa-circle-info', btn: 'Đóng' },
+    };
+
+    function showNotice({ kind = 'success', title, message, detailLabel, detailValue, button }) {
+        if (!noticeModal) { alert(title + ' - ' + (message || '')); return; }
+        const cfg = NOTICE_KINDS[kind] || NOTICE_KINDS.success;
+        noticeCard.className = 'notice-card is-' + kind;
+        noticeIcon.innerHTML = `<i class="fa-solid ${cfg.icon}"></i>`;
+        noticeTitle.textContent = title;
+        noticeMessage.textContent = message || '';
+        if (detailLabel && detailValue) {
+            noticeDetail.innerHTML = `<span>${detailLabel}</span><strong>${detailValue}</strong>`;
+            noticeDetail.classList.remove('hidden');
+        } else {
+            noticeDetail.classList.add('hidden');
+        }
+        noticeOk.textContent = button || cfg.btn;
+        noticeModal.classList.remove('hidden');
+        noticeOk.focus();
+    }
+
+    function hideNotice() { if (noticeModal) noticeModal.classList.add('hidden'); }
+
+    if (noticeOk) noticeOk.addEventListener('click', hideNotice);
+    if (noticeModal) {
+        noticeModal.addEventListener('click', (e) => { if (e.target === noticeModal) hideNotice(); });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !noticeModal.classList.contains('hidden')) hideNotice();
+        });
+    }
+
     function updateIdleState() {
         if (!idlePlaceholder) return;
         const hasActiveState = !loadingState.classList.contains('hidden') ||
@@ -533,14 +579,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    alert('🎁 CHÚC MỪNG!\nKích hoạt dùng thử 7 ngày miễn phí thành công!');
+                    showNotice({ kind: 'success', title: 'Mở khoá 7 ngày đầy đủ',
+                                 message: 'Bạn có 7 ngày dùng toàn bộ tính năng: 4K/8K, MP3 320kbps, tải đa luồng.' });
                     closeModal();
                     await checkLicenseStatus();
                 } else {
-                    alert('❌ ' + (data.detail || 'Không thể kích hoạt dùng thử.'));
+                    showNotice({ kind: 'error', title: 'Không kích hoạt được',
+                                 message: data.detail || 'Không thể kích hoạt dùng thử.' });
                 }
             } catch (err) {
-                alert('❌ Lỗi kết nối khi đăng ký dùng thử.');
+                showNotice({ kind: 'error', title: 'Mất kết nối',
+                             message: 'Không liên lạc được với app. Thử lại sau vài giây.' });
             } finally {
                 btnClaimTrial.disabled = false;
                 btnClaimTrial.innerHTML = '<i class="fa-solid fa-bolt"></i> Kích Hoạt Dùng Thử 7 Ngày Ngay';
@@ -572,8 +621,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     autoCheckInterval = null;
                 }
                 closeModal();
-                const timeText = data.is_lifetime ? 'Vĩnh Viễn (Trọn Đời)' : `${data.days_left} ngày`;
-                alert(`🎉 CHÚC MỪNG!\nBản quyền Media Download Studio (${data.plan_name}) đã được kích hoạt thành công!\n\nHạn sử dụng: ${timeText}.`);
+                const timeText = data.is_lifetime ? 'Trọn đời' : `${data.days_left} ngày`;
+                showNotice({
+                    kind: 'premium',
+                    title: 'Đã kích hoạt bản quyền',
+                    message: `${data.plan_name} — mọi tính năng cao cấp đã mở. Cảm ơn bạn đã ủng hộ.`,
+                    detailLabel: 'Hạn sử dụng',
+                    detailValue: timeText,
+                });
             }
 
             // Update UI elements based on activation
@@ -839,15 +894,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    alert('🎉 Kích hoạt bản quyền thành công!');
+                    showNotice({ kind: 'premium', title: 'Đã kích hoạt bản quyền',
+                                 message: 'Mọi tính năng cao cấp đã mở. Cảm ơn bạn đã ủng hộ.' });
                     licenseKeyInput.value = '';
                     closeModal();
                     await checkLicenseStatus();
                 } else {
-                    alert('❌ Lỗi: ' + (data.detail || 'License Key không hợp lệ.'));
+                    showNotice({ kind: 'error', title: 'Key không hợp lệ',
+                                 message: data.detail || 'Kiểm tra lại key, hoặc liên hệ admin.' });
                 }
             } catch (err) {
-                alert('❌ Lỗi kết nối khi kích hoạt.');
+                showNotice({ kind: 'error', title: 'Mất kết nối',
+                             message: 'Không liên lạc được với app. Thử lại sau vài giây.' });
             } finally {
                 if (btnSubmit) {
                     btnSubmit.disabled = false;
