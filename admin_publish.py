@@ -86,12 +86,15 @@ def _token() -> str:
     return _credentials.token
 
 
-def publish_key(machine_id: str, key: str, expiry, days: int) -> None:
+def publish_key(machine_id: str, key: str, expiry, days: int,
+                request_id: str = "") -> None:
     """Ghi key da duyet len duong dan approved/<MA_MAY>."""
     load_env()
     machine_id = machine_id.upper().strip()
     body = json.dumps({
         "key": key,
+        "status": "approved",
+        "request_id": request_id,
         "expiry": expiry.isoformat() if hasattr(expiry, "isoformat") else str(expiry),
         "days": days,
         "approved_at": __import__("datetime").datetime.now().isoformat(),
@@ -103,6 +106,25 @@ def publish_key(machine_id: str, key: str, expiry, days: int) -> None:
     with urllib.request.urlopen(req, timeout=20) as r:
         if r.status not in (200, 204):
             raise RuntimeError("Realtime Database tra ve %s" % r.status)
+
+
+def publish_rejection(machine_id: str, request_id: str) -> None:
+    """Ghi quyet dinh TU CHOI len node cua may, de app biet ma ngung cho.
+
+    Kem request_id de app chi coi la tu choi neu dung yeu cau nó đang chờ;
+    yeu cau lan sau co id khac nen khong bi tu choi oan boi node cu.
+    """
+    load_env()
+    body = json.dumps({
+        "status": "rejected",
+        "request_id": request_id,
+        "rejected_at": __import__("datetime").datetime.now().isoformat(),
+    }).encode()
+    url = "%s/approved/%s.json?access_token=%s" % (
+        _db_url(), machine_id.upper().strip(), _token())
+    req = urllib.request.Request(url, data=body, method="PUT",
+                                 headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=20)
 
 
 def revoke_key(machine_id: str) -> None:

@@ -446,6 +446,15 @@ def get_license_status() -> dict:
     status["limits"] = get_limits(activated)
     status["tier_name"] = status["plan_name"] if activated else "Bản Miễn Phí"
 
+    # Yeu cau kich hoat gan nhat bi admin tu choi? Giao dien can biet de bao.
+    try:
+        from . import remote_activation
+        status["activation_rejected"] = remote_activation.last_rejection()
+        status["activation_pending"] = bool(remote_activation._pending())
+    except Exception:
+        status["activation_rejected"] = None
+        status["activation_pending"] = False
+
     if not activated:
         status["message"] = (
             "Bản miễn phí: tối đa 1080p, MP3 128kbps, tải từng file một. "

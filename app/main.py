@@ -102,7 +102,12 @@ async def activate_license(req: ActivateRequest):
 async def request_activation(payload: LicenseRequestPayload = LicenseRequestPayload()):
     """Gui yeu cau kich hoat len may chu; may chu se nhan cho admin qua Telegram."""
     machine_id = get_machine_id()
-    body = json.dumps({"machine_id": machine_id, "plan": payload.plan}).encode()
+    # Ma rieng cho lan yeu cau nay: server gan vao nut Duyet/Tu Choi, app
+    # doi chieu khi nhan ket qua de khong nham voi lan truoc.
+    import uuid
+    request_id = uuid.uuid4().hex[:12]
+    body = json.dumps({"machine_id": machine_id, "plan": payload.plan,
+                       "request_id": request_id}).encode()
 
     def call_server():
         req = urllib.request.Request(
@@ -121,7 +126,7 @@ async def request_activation(payload: LicenseRequestPayload = LicenseRequestPayl
             if result.get("success"):
                 # Bat dau hoi server cho key duyet. Chi hoi khi da gui yeu cau,
                 # de may chi dung ban mien phi khong goi mang vo ich.
-                remote_activation.mark_pending(machine_id, payload.plan)
+                remote_activation.mark_pending(machine_id, payload.plan, request_id)
                 return result
             last_error = result.get("message") or result.get("detail") or "Máy chủ từ chối"
             break

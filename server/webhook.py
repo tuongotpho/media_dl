@@ -78,15 +78,17 @@ def tg_get(method: str) -> dict:
         return {"ok": False}
 
 
-def approval_keyboard(machine_id: str) -> dict:
+def approval_keyboard(machine_id: str, request_id: str = "") -> dict:
+    """Nut bam mang theo request_id de app phan biet lan nay voi lan truoc."""
+    rid = ":" + request_id if request_id else ""
     return {"inline_keyboard": [
         [
-            {"text": "🥉 Duyệt 6 Tháng (19k)", "callback_data": "approve:%s:180" % machine_id},
-            {"text": "🥈 Duyệt 1 Năm (29k)", "callback_data": "approve:%s:365" % machine_id},
+            {"text": "🥉 Duyệt 6 Tháng (19k)", "callback_data": "approve:%s:180%s" % (machine_id, rid)},
+            {"text": "🥈 Duyệt 1 Năm (29k)", "callback_data": "approve:%s:365%s" % (machine_id, rid)},
         ],
         [
-            {"text": "👑 Duyệt Vĩnh Viễn (99k)", "callback_data": "approve:%s:36500" % machine_id},
-            {"text": "❌ Từ Chối", "callback_data": "reject:%s" % machine_id},
+            {"text": "👑 Duyệt Vĩnh Viễn (99k)", "callback_data": "approve:%s:36500%s" % (machine_id, rid)},
+            {"text": "❌ Từ Chối", "callback_data": "reject:%s%s" % (machine_id, rid)},
         ],
     ]}
 
@@ -96,6 +98,7 @@ def approval_keyboard(machine_id: str) -> dict:
 class ActivationRequest(BaseModel):
     machine_id: str
     plan: str = "1year"
+    request_id: str = ""
 
 
 @app.post("/api/request-activation")
@@ -110,6 +113,9 @@ async def request_activation(req: ActivationRequest):
     machine_id = req.machine_id.upper().strip()
     if not machine_id or len(machine_id) > 32 or not machine_id.isalnum():
         raise HTTPException(400, "Mã máy không hợp lệ.")
+    request_id = req.request_id.strip()[:16]
+    if request_id and not request_id.isalnum():
+        raise HTTPException(400, "Mã yêu cầu không hợp lệ.")
 
     label = PLAN_LABELS.get(req.plan, PLAN_LABELS["1year"])[0]
     text = ("🔔 *YÊU CẦU KÍCH HOẠT MỚI*\n\n"
@@ -123,7 +129,7 @@ async def request_activation(req: ActivationRequest):
         "chat_id": ADMIN_CHAT_ID,
         "text": text,
         "parse_mode": "Markdown",
-        "reply_markup": approval_keyboard(machine_id),
+        "reply_markup": approval_keyboard(machine_id, request_id),
     })
     if not res.get("ok"):
         raise HTTPException(502, "Không gửi được yêu cầu đến admin. Thử lại sau.")
@@ -191,23 +197,34 @@ def handle_callback(cq: dict) -> None:
 
     parts = data.split(":")
     if parts[0] == "approve" and len(parts) >= 3:
-        deliver(chat_id, message_id, parts[1], int(parts[2]), cb_id)
+        rid = parts[3] if len(parts) > 3 else ""
+        deliver(chat_id, message_id, parts[1], int(parts[2]), cb_id, rid)
     elif parts[0] == "reject" and len(parts) >= 2:
+        mid = parts[1].upper()
+        rid = parts[2] if len(parts) > 2 else ""
+        # Ghi quyet dinh len Firebase: khong ghi thi app cua khach cu doi mai.
+        try:
+            admin_publish.publish_rejection(mid, rid)
+            note = "App của khách đã được báo."
+        except Exception as e:
+            note = "⚠️ Không báo được cho app: `%s`" % e
+            print("[reject] publish_rejection that bai: %s" % e, flush=True)
         tg("editMessageText", {
             "chat_id": chat_id, "message_id": message_id, "parse_mode": "Markdown",
-            "text": "❌ *ĐÃ TỪ CHỐI*\n\n🖥 Mã máy: `%s`" % parts[1]})
+            "text": "❌ *ĐÃ TỪ CHỐI*\n\n🖥 Mã máy: `%s`\n%s" % (mid, note)})
         tg("answerCallbackQuery", {"callback_query_id": cb_id, "text": "❌ Đã từ chối"})
     else:
         tg("answerCallbackQuery", {"callback_query_id": cb_id, "text": "⚠️ Không hiểu lệnh"})
 
 
-def deliver(chat_id, message_id, machine_id: str, days: int, cb_id: str = None) -> None:
+def deliver(chat_id, message_id, machine_id: str, days: int,
+            cb_id: str = None, request_id: str = "") -> None:
     """Sinh key, dua len Realtime Database, bao lai cho admin."""
     machine_id = machine_id.upper().strip()
     key, expiry = generate_license_key(machine_id, days)
 
     try:
-        admin_publish.publish_key(machine_id, key, expiry, days)
+        admin_publish.publish_key(machine_id, key, expiry, days, request_id)
         delivery = "⚡ Key đã lên server — app của khách tự mở khoá trong vài giây."
         toast = "✅ Đã duyệt & đẩy key lên server"
     except Exception as e:

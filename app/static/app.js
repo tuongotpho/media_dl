@@ -523,6 +523,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentMachineId = '';
     let isLicenseActive = false;
+    let lastLicenseFingerprint = null;   // null = chua doc lan nao
+    let lastRejectionShown = null;
 
     let selectedPlan = '1year';
 
@@ -607,6 +609,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const previouslyActive = isLicenseActive;
             isLicenseActive = !!data.activated;
 
+            // Dau van cua goi hien tai: doi goi (1 nam -> vinh vien) hay gia han
+            // deu phai bao, khong chi luc chuyen tu chua kich hoat sang co.
+            const licenseFingerprint = isLicenseActive
+                ? `${data.plan_name}|${data.expiry}` : '';
+            // Lan doc dau tien sau khi mo app khong phai la "vua duoc kich hoat":
+            // key co san tu truoc thi khong chuc mung lai.
+            const firstRead = lastLicenseFingerprint === null;
+            const licenseChanged = !firstRead && licenseFingerprint !== lastLicenseFingerprint;
+            lastLicenseFingerprint = licenseFingerprint;
+
+            // Admin tu choi yeu cau dang cho?
+            const rej = data.activation_rejected;
+            if (rej && rej.request_id && rej.request_id !== lastRejectionShown) {
+                lastRejectionShown = rej.request_id;
+                if (autoCheckInterval) {
+                    clearInterval(autoCheckInterval);
+                    autoCheckInterval = setInterval(checkLicenseStatus, 3000);
+                }
+                if (requestFeedback) requestFeedback.classList.add('hidden');
+                showNotice({
+                    kind: 'error',
+                    title: 'Yêu cầu bị từ chối',
+                    message: 'Admin chưa xác nhận được thanh toán cho yêu cầu này. '
+                           + 'Kiểm tra lại nội dung chuyển khoản, hoặc nhắn admin qua Telegram @august8787 kèm mã máy.',
+                    detailLabel: 'Mã máy',
+                    detailValue: currentMachineId,
+                    button: 'Đã hiểu',
+                });
+            }
+
             // Update Machine ID & Bank Content displays
             if (modalMachineId) modalMachineId.textContent = currentMachineId;
             if (aboutMachineId) aboutMachineId.textContent = currentMachineId;
@@ -614,8 +646,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentSuffix = (planConfig[selectedPlan] || planConfig['1year']).suffix;
             if (bankContent) bankContent.innerHTML = `MDS <span class="highlight-val">${currentMachineId}</span> <span class="text-muted">${currentSuffix}</span>`;
 
-            // If just activated via auto-approval!
-            if (isLicenseActive && !previouslyActive) {
+            // Vua duoc kich hoat, hoac dang co key ma duoc duyet goi khac
+            const justActivated = !firstRead && isLicenseActive && !previouslyActive;
+            const upgraded = isLicenseActive && previouslyActive && licenseChanged;
+            if (justActivated || upgraded) {
                 if (autoCheckInterval) {
                     clearInterval(autoCheckInterval);
                     autoCheckInterval = null;
@@ -624,8 +658,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const timeText = data.is_lifetime ? 'Trọn đời' : `${data.days_left} ngày`;
                 showNotice({
                     kind: 'premium',
-                    title: 'Đã kích hoạt bản quyền',
-                    message: `${data.plan_name} — mọi tính năng cao cấp đã mở. Cảm ơn bạn đã ủng hộ.`,
+                    title: upgraded ? 'Đã cập nhật bản quyền' : 'Đã kích hoạt bản quyền',
+                    message: upgraded
+                        ? `Bản quyền đã chuyển sang ${data.plan_name}. Cảm ơn bạn đã tiếp tục ủng hộ.`
+                        : `${data.plan_name} — mọi tính năng cao cấp đã mở. Cảm ơn bạn đã ủng hộ.`,
                     detailLabel: 'Hạn sử dụng',
                     detailValue: timeText,
                 });

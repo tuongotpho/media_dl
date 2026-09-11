@@ -45,20 +45,32 @@ PENDING_MAX_AGE = 7 * 86400   # ngung hoi sau 7 ngay khong duoc duyet
 
 _last_poll = 0.0
 
+# Quyet dinh tu choi gan nhat, de giao dien hien thong bao. Giu cho toi khi
+# nguoi dung gui yeu cau moi (khong xoa sau lan doc dau, vi nhieu endpoint
+# cung doc trang thai license va se "an mat" thong bao truoc khi giao dien
+# kip thay).
+_last_rejection = None
+
 
 def _pending_path() -> str:
     from .paths import base_dir
     return os.path.join(base_dir(), "pending_activation.json")
 
 
-def mark_pending(machine_id: str, plan: str = "") -> None:
+def mark_pending(machine_id: str, plan: str = "", request_id: str = "") -> None:
     """Danh dau da gui yeu cau kich hoat, de bat dau hoi server."""
+    global _last_rejection
+    _last_rejection = None          # yeu cau moi -> xoa thong bao tu choi cu
     try:
         with open(_pending_path(), "w", encoding="utf-8") as f:
             json.dump({"machine_id": machine_id, "plan": plan,
-                       "ts": int(time.time())}, f)
+                       "request_id": request_id, "ts": int(time.time())}, f)
     except Exception:
         pass
+
+
+def last_rejection():
+    return _last_rejection
 
 
 def clear_pending() -> None:
@@ -83,8 +95,8 @@ def _pending() -> dict:
     return data
 
 
-def fetch_approved_key(machine_id: str) -> str:
-    """Doc key da duyet cua may nay. Tra ve chuoi rong neu chua co.
+def fetch_decision(machine_id: str) -> dict:
+    """Doc node cua may nay. Tra ve {} neu chua co gi.
 
     Khong bao gio nem loi ra ngoai: mat mang hay server loi thi coi nhu
     chua duyet, app van chay binh thuong o ban mien phi.
@@ -101,19 +113,44 @@ def fetch_approved_key(machine_id: str) -> str:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT, context=ctx) as r:
             data = json.loads(r.read().decode("utf-8"))
         if isinstance(data, dict):
-            return str(data.get("key") or "")
+            return data
     except Exception:
         pass
-    return ""
+    return {}
+
+
+def fetch_approved_key(machine_id: str) -> str:
+    return str(fetch_decision(machine_id).get("key") or "")
 
 
 def poll_if_pending(machine_id: str) -> str:
-    """Hoi server neu dang cho duyet va da qua khoang cach toi thieu."""
-    global _last_poll
-    if not _pending():
+    """Hoi server neu dang cho duyet. Tra ve key neu duoc duyet.
+
+    Neu bi TU CHOI dung yeu cau dang cho (khop request_id) thi ngung cho
+    va luu lai de giao dien bao. Node tu choi cua lan truoc (request_id
+    khac) bi bo qua, nen yeu cau moi khong bi tu choi oan.
+    """
+    global _last_poll, _last_rejection
+    pending = _pending()
+    if not pending:
         return ""
     now = time.time()
     if now - _last_poll < POLL_INTERVAL:
         return ""
     _last_poll = now
-    return fetch_approved_key(machine_id)
+
+    node = fetch_decision(machine_id)
+    if node.get("key"):
+        return str(node["key"])
+
+    if node.get("status") == "rejected":
+        same_request = (not pending.get("request_id")
+                        or node.get("request_id") == pending.get("request_id"))
+        if same_request:
+            _last_rejection = {
+                "request_id": pending.get("request_id", ""),
+                "plan": pending.get("plan", ""),
+                "at": node.get("rejected_at", ""),
+            }
+            clear_pending()
+    return ""
