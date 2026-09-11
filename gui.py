@@ -28,7 +28,7 @@ def ensure_stdio():
 
     from app.paths import base_dir
     try:
-        stream = open(os.path.join(base_dir(), "ytdlp-studio.log"),
+        stream = open(os.path.join(base_dir(), "MediaDownloadStudio.log"),
                       "a", encoding="utf-8", buffering=1)
     except Exception:
         stream = open(os.devnull, "w", encoding="utf-8")
@@ -127,7 +127,7 @@ def main() -> int:
             "Media Download Studio - Loi",
             html="<h2 style='font-family:sans-serif;padding:24px'>"
                  "Khong khoi dong duoc server.<br>"
-                 "Xem chi tiet trong file ytdlp-studio.log canh file exe.</h2>",
+                 "Xem chi tiet trong file MediaDownloadStudio.log canh file exe.</h2>",
             width=560, height=240,
         )
         webview.start()

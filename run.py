@@ -28,7 +28,7 @@ RELOAD = os.environ.get("RELOAD", "0") == "1" and not IS_FROZEN
 
 def open_browser():
     time.sleep(1.5)
-    print(f"\n[YTDLP Studio] Dang mo giao dien tren trinh duyet tai http://127.0.0.1:{PORT} ...")
+    print(f"\n[Media Download Studio] Dang mo giao dien tren trinh duyet tai http://127.0.0.1:{PORT} ...")
     webbrowser.open(f"http://127.0.0.1:{PORT}")
 
 
@@ -40,7 +40,7 @@ def main():
     from app.paths import downloads_dir
 
     print("=" * 60)
-    print("      YTDLP Studio Desktop WebApp Engine (FastAPI)     ")
+    print("      Media Download Studio Desktop WebApp Engine (FastAPI)     ")
     print("=" * 60)
     print(f"Server: http://127.0.0.1:{PORT}  (bind {HOST})")
     print(f"Thu muc chua file tai: {downloads_dir()}")

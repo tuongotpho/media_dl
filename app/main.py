@@ -157,7 +157,7 @@ async def request_activation(payload: LicenseRequestPayload = LicenseRequestPayl
 
 def _log_tail(max_chars: int = 900) -> str:
     """Duoi file log cua ban .exe (gui.py ghi stderr vao day). Dev mode: rong."""
-    path = os.path.join(base_dir(), "ytdlp-studio.log")
+    path = os.path.join(base_dir(), "MediaDownloadStudio.log")
     try:
         with open(path, "rb") as f:
             f.seek(0, 2)

@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Cau hinh dong goi YTDLP Studio thanh file .exe portable.
+"""Cau hinh dong goi Media Download Studio thanh file .exe portable.
 
-Build:  pyinstaller ytdlp-studio.spec --noconfirm
+Build:  pyinstaller MediaDownloadStudio.spec --noconfirm
 """
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
@@ -70,13 +70,13 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='YTDLP-Studio',
+    name='MediaDownloadStudio',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
     # console=False: khong hien cua so den. Moi thu in ra deu di vao
-    # ytdlp-studio.log canh file exe (xem ensure_stdio trong gui.py).
+    # MediaDownloadStudio.log canh file exe (xem ensure_stdio trong gui.py).
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -93,5 +93,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='YTDLP-Studio',
+    name='MediaDownloadStudio',
 )

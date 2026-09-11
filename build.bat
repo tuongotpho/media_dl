@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title Build YTDLP Studio .exe
+title Build Media Download Studio .exe
 cd /d "%~dp0"
 
 echo ============================================================
-echo    Dong goi YTDLP Studio thanh file .exe portable
+echo    Dong goi Media Download Studio thanh file .exe portable
 echo ============================================================
 echo.
 
@@ -20,7 +20,7 @@ echo.
 echo [2/2] Dang build... mat khoang 1-3 phut, dung tat cua so.
 echo.
 
-python -m PyInstaller ytdlp-studio.spec --noconfirm
+python -m PyInstaller MediaDownloadStudio.spec --noconfirm
 
 if errorlevel 1 (
     echo.
@@ -31,9 +31,9 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================
-echo   XONG! App nam tai:  dist\YTDLP-Studio\YTDLP-Studio.exe
+echo   XONG! App nam tai:  dist\MediaDownloadStudio\MediaDownloadStudio.exe
 echo.
-echo   Chep ca thu muc dist\YTDLP-Studio di dau cung chay duoc,
+echo   Chep ca thu muc dist\MediaDownloadStudio di dau cung chay duoc,
 echo   khong can cai Python.
 echo   Video tai ve nam trong thu muc "downloads" canh file exe.
 echo ============================================================
