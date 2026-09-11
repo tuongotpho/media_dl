@@ -518,6 +518,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCopyStk = document.getElementById('btn-copy-stk');
     const btnRequestActivation = document.getElementById('btn-request-activation');
     const requestFeedback = document.getElementById('request-feedback');
+
+    // Dong trang thai duoi nut Gui Yeu Cau. dataset.kind ghi loai dang hien
+    // de vong hoi trang thai biet cai nao la "dang cho" (duoc phep tu xoa
+    // khi server bao xong) va cai nao la loi (giu lai cho nguoi dung doc).
+    function showWaitingFeedback() {
+        if (!requestFeedback) return;
+        requestFeedback.dataset.kind = 'waiting';
+        requestFeedback.className = 'request-feedback-text success';
+        requestFeedback.innerHTML = '✅ <strong>Đã gửi yêu cầu đến Admin.</strong><br/>'
+            + '<i class="fa-solid fa-spinner fa-spin margin-top-sm"></i> '
+            + '<em>Đang chờ Admin duyệt... App sẽ tự mở khoá ngay khi được duyệt.</em>';
+        requestFeedback.classList.remove('hidden');
+    }
+    function hideWaitingFeedback() {
+        if (!requestFeedback || requestFeedback.dataset.kind !== 'waiting') return;
+        requestFeedback.classList.add('hidden');
+        requestFeedback.dataset.kind = '';
+    }
     const licenseForm = document.getElementById('license-form');
     const licenseKeyInput = document.getElementById('license-key-input');
 
@@ -619,6 +637,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const licenseChanged = !firstRead && licenseFingerprint !== lastLicenseFingerprint;
             lastLicenseFingerprint = licenseFingerprint;
 
+            // Dong "dang cho" phai theo trang thai that cua server:
+            // - server het cho (duyet / tu choi / qua han) -> tat dong dang cho
+            // - dang cho ma dong chua hien (mo lai app giua chung) -> hien
+            if (!data.activation_pending) {
+                hideWaitingFeedback();
+            } else if (requestFeedback && requestFeedback.classList.contains('hidden')) {
+                showWaitingFeedback();
+            }
+
             // Admin tu choi yeu cau dang cho?
             const rej = data.activation_rejected;
             if (rej && rej.request_id && rej.request_id !== lastRejectionShown) {
@@ -627,7 +654,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     clearInterval(autoCheckInterval);
                     autoCheckInterval = setInterval(checkLicenseStatus, 3000);
                 }
-                if (requestFeedback) requestFeedback.classList.add('hidden');
                 showNotice({
                     kind: 'error',
                     title: 'Yêu cầu bị từ chối',
@@ -865,6 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRequestActivation.addEventListener('click', async () => {
             btnRequestActivation.disabled = true;
             btnRequestActivation.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang Gửi Yêu Cầu...';
+            requestFeedback.dataset.kind = 'connecting';
             requestFeedback.className = 'request-feedback-text';
             requestFeedback.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Đang kết nối máy chủ...';
             requestFeedback.classList.remove('hidden');
@@ -884,19 +911,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    requestFeedback.className = 'request-feedback-text success';
-                    requestFeedback.innerHTML = '✅ <strong>Đã gửi yêu cầu đến Admin Telegram!</strong><br/><i class="fa-solid fa-spinner fa-spin margin-top-sm"></i> <em>Đang chờ Admin bấm "Duyệt"... (Phần mềm sẽ tự động kích hoạt ngay lập tức)</em>';
-                    requestFeedback.classList.remove('hidden');
+                    showWaitingFeedback();
 
                     // Start auto polling every 2 seconds
                     if (autoCheckInterval) clearInterval(autoCheckInterval);
                     autoCheckInterval = setInterval(checkLicenseStatus, 2000);
                 } else {
+                    requestFeedback.dataset.kind = 'error';
                     requestFeedback.className = 'request-feedback-text error';
                     requestFeedback.textContent = data.detail || 'Không thể gửi yêu cầu.';
                     requestFeedback.classList.remove('hidden');
                 }
             } catch (err) {
+                requestFeedback.dataset.kind = 'error';
                 requestFeedback.className = 'request-feedback-text error';
                 requestFeedback.textContent = 'Mất kết nối với app. Thử lại sau vài giây.';
                 requestFeedback.classList.remove('hidden');
