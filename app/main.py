@@ -18,7 +18,7 @@ from . import engine
 from . import history as history_store
 from . import remote_activation
 
-app = FastAPI(title="Media Download Studio", version="1.0.0")
+app = FastAPI(title="Media Download Studio", version="1.1.0")
 
 # Enable CORS for local development
 app.add_middleware(
