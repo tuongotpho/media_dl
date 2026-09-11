@@ -37,7 +37,7 @@ import urllib.request
 DB_URL = os.environ.get(
     "FIREBASE_DB_URL",
     "https://media-download-free-default-rtdb.asia-southeast1.firebasedatabase.app",
-)
+).strip()
 
 REQUEST_TIMEOUT = 8
 POLL_INTERVAL = 3          # giay, tranh hoi don dap

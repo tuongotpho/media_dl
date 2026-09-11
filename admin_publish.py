@@ -43,12 +43,16 @@ def load_env(path=None) -> None:
 
 
 def _db_url() -> str:
-    url = os.environ.get("FIREBASE_DB_URL", "").rstrip("/")
+    # .strip() truoc: dan vao o cua Render rat de dinh xuong dong o cuoi,
+    # va urllib tu choi thang URL co ky tu dieu khien.
+    url = os.environ.get("FIREBASE_DB_URL", "").strip().rstrip("/")
     if not url:
         raise RuntimeError(
             "Thieu FIREBASE_DB_URL trong .env.local.\n"
             "Lay trong Firebase Console > Realtime Database, dang:\n"
             "  https://<ten>-default-rtdb.<vung>.firebasedatabase.app")
+    if not url.startswith(("https://", "http://")):
+        url = "https://" + url
     return url
 
 
