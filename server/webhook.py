@@ -24,7 +24,9 @@ BIEN MOI TRUONG CAN DAT TREN RENDER
 import json
 import os
 import sys
+import time
 import urllib.request
+from collections import defaultdict, deque
 from datetime import datetime
 
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -135,6 +137,114 @@ async def request_activation(req: ActivationRequest):
         raise HTTPException(502, "Không gửi được yêu cầu đến admin. Thử lại sau.")
     return {"success": True,
             "message": "Đã gửi yêu cầu đến admin. App sẽ tự mở khoá ngay khi được duyệt."}
+
+
+# ===================== BAO CAO LOI TU APP =====================
+
+# Endpoint nay cong khai (app cua khach goi vao), nen phai chan spam:
+# moi ma may toi da 5 bao cao / gio, va toan bo dich vu toi da 60 / gio.
+_reports_per_machine = defaultdict(deque)
+_reports_global = deque()
+REPORT_LIMIT_PER_MACHINE = 5
+REPORT_LIMIT_GLOBAL = 60
+REPORT_WINDOW = 3600
+
+
+def _rate_limited(machine_id: str) -> bool:
+    now = time.time()
+    for q in (_reports_per_machine[machine_id], _reports_global):
+        while q and now - q[0] > REPORT_WINDOW:
+            q.popleft()
+    if len(_reports_per_machine[machine_id]) >= REPORT_LIMIT_PER_MACHINE:
+        return True
+    if len(_reports_global) >= REPORT_LIMIT_GLOBAL:
+        return True
+    _reports_per_machine[machine_id].append(now)
+    _reports_global.append(now)
+    return False
+
+
+class ErrorReport(BaseModel):
+    machine_id: str
+    app_version: str = ""
+    tier_name: str = ""
+    days_left: int | None = None
+    engine_version: str = ""
+    engine_source: str = ""
+    os_info: str = ""
+    url: str = ""
+    quality: str = ""
+    error: str = ""
+    engine_hint: bool = False
+    log_tail: str = ""
+    note: str = ""
+
+
+def _md_escape(text: str) -> str:
+    """Telegram Markdown v1: chi can ne bon ky tu nay."""
+    text = str(text)
+    for ch in ("\\", "_", "*", "`", "["):
+        text = text.replace(ch, "\\" + ch)
+    return text
+
+
+@app.post("/api/report-error")
+async def report_error(rep: ErrorReport):
+    """App cua khach gui bao cao khi tai hong; may chu chuyen len Telegram admin.
+
+    Thong tin gom goi ban quyen, phien ban engine, link, loi va duoi log —
+    du de tai hien ma khong can hoi lai khach.
+    """
+    if not ADMIN_CHAT_ID:
+        raise HTTPException(503, "Máy chủ chưa cấu hình.")
+
+    machine_id = rep.machine_id.upper().strip()
+    if not machine_id or len(machine_id) > 32 or not machine_id.isalnum():
+        raise HTTPException(400, "Mã máy không hợp lệ.")
+    if _rate_limited(machine_id):
+        raise HTTPException(429, "Đã gửi quá nhiều báo cáo, thử lại sau một giờ.")
+
+    def cut(v, n):
+        v = str(v or "").strip()
+        return v if len(v) <= n else v[:n] + "…"
+
+    when = datetime.now().strftime("%H:%M %d/%m/%Y")
+    tier = cut(rep.tier_name, 40) or "?"
+    if rep.days_left is not None and rep.days_left < 10000:
+        tier += " · còn %d ngày" % rep.days_left
+
+    lines = [
+        "🐞 *BÁO LỖI TẢI FILE*" + ("  ⚠️ _nghi do engine_" if rep.engine_hint else ""),
+        "",
+        "🖥 Mã máy: `%s`" % machine_id,
+        "🎫 Gói: *%s*" % _md_escape(tier),
+        "📦 App %s · Engine %s (%s)" % (
+            _md_escape(cut(rep.app_version, 20) or "?"),
+            _md_escape(cut(rep.engine_version, 20) or "?"),
+            _md_escape(cut(rep.engine_source, 20) or "?")),
+        "💻 %s" % _md_escape(cut(rep.os_info, 80) or "?"),
+        "🕒 %s" % when,
+        "",
+        "🔗 %s" % _md_escape(cut(rep.url, 300) or "(không có link)"),
+        "🎞 Chất lượng: %s" % _md_escape(cut(rep.quality, 40) or "?"),
+        "",
+        "❌ *Lỗi:*",
+        "`%s`" % cut(rep.error, 700).replace("`", "'"),
+    ]
+    if rep.note.strip():
+        lines += ["", "💬 Khách ghi: %s" % _md_escape(cut(rep.note, 300))]
+    if rep.log_tail.strip():
+        lines += ["", "📜 *Log cuối:*", "`%s`" % cut(rep.log_tail, 900).replace("`", "'")]
+
+    text = "\n".join(lines)
+    res = tg("sendMessage", {"chat_id": ADMIN_CHAT_ID, "text": text[:4000],
+                             "parse_mode": "Markdown"})
+    if not res.get("ok"):
+        # Markdown loi (ky tu la trong log) -> gui lai dang van ban thuong
+        res = tg("sendMessage", {"chat_id": ADMIN_CHAT_ID, "text": text[:4000]})
+    if not res.get("ok"):
+        raise HTTPException(502, "Không gửi được báo cáo. Thử lại sau.")
+    return {"success": True, "message": "Đã gửi báo cáo cho admin. Cảm ơn bạn."}
 
 
 # ===================== TELEGRAM GOI VAO =====================

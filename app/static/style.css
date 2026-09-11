@@ -1744,3 +1744,6 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
     .notice-card, .notice-icon { animation: none; }
 }
+
+/* ----- Nut bao loi trong khung loi ----- */
+#btn-report-error { margin-top: 10px; }

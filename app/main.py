@@ -61,6 +61,11 @@ class ActivateRequest(BaseModel):
 class LicenseRequestPayload(BaseModel):
     plan: str = "1year"
 
+class ErrorReportPayload(BaseModel):
+    task_id: str = ""      # tai dang hien tren man hinh
+    entry_id: str = ""     # hoac mot muc trong lich su
+    note: str = ""         # khach ghi them, tuy chon
+
 
 # ---- License API ----
 
@@ -146,6 +151,89 @@ async def request_activation(payload: LicenseRequestPayload = LicenseRequestPayl
                 "Kiểm tra kết nối mạng rồi thử lại, hoặc liên hệ admin qua Telegram "
                 "@august8787 kèm mã máy %s." % (last_error, machine_id)),
     )
+
+
+# ---- Bao loi cho admin ----
+
+def _log_tail(max_chars: int = 900) -> str:
+    """Duoi file log cua ban .exe (gui.py ghi stderr vao day). Dev mode: rong."""
+    path = os.path.join(base_dir(), "ytdlp-studio.log")
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, 2)
+            size = f.tell()
+            f.seek(max(0, size - 4000))
+            tail = f.read().decode("utf-8", "replace")
+        lines = [l for l in tail.splitlines() if l.strip()][-25:]
+        return "\n".join(lines)[-max_chars:]
+    except Exception:
+        return ""
+
+
+@app.post("/api/report-error")
+async def report_error(payload: ErrorReportPayload):
+    """Gui bao cao loi tai file len may chu; may chu chuyen cho admin qua Telegram.
+
+    Chi chay khi nguoi dung bam nut, khong tu dong: link video la du lieu
+    rieng cua ho, va admin khong can nhan moi loi vat (video rieng tu, mat
+    mang...). Nut bam la su dong y, va nguoi dung thay ro minh gui gi.
+    """
+    import platform
+
+    url = quality = error = ""
+    engine_hint = False
+    if payload.task_id and payload.task_id in download_tasks:
+        t = download_tasks[payload.task_id]
+        url, error = t.get("url", ""), t.get("error", "")
+        engine_hint = bool(t.get("engine_hint"))
+        entry = next((e for e in history_store.list_entries(DOWNLOAD_DIR)
+                      if e.get("id") == t.get("entry_id")), None)
+        quality = (entry or {}).get("quality", "")
+    elif payload.entry_id:
+        entry = next((e for e in history_store.list_entries(DOWNLOAD_DIR)
+                      if e.get("id") == payload.entry_id), None)
+        if entry:
+            url, error, quality = entry.get("url", ""), entry.get("error", ""), entry.get("quality", "")
+            engine_hint = engine.looks_like_engine_failure(error)
+    if not error:
+        raise HTTPException(status_code=400, detail="Không tìm thấy lỗi để báo cáo.")
+
+    lic = get_license_status()
+    eng = engine.status()
+    body = json.dumps({
+        "machine_id": get_machine_id(),
+        "app_version": app.version,
+        "tier_name": lic.get("tier_name", ""),
+        "days_left": lic.get("days_left"),
+        "engine_version": eng.get("current", ""),
+        "engine_source": "tự cập nhật" if eng.get("using_updated_engine") else "đóng gói sẵn",
+        "os_info": "%s %s" % (platform.system(), platform.release()),
+        "url": url,
+        "quality": quality,
+        "error": error,
+        "engine_hint": engine_hint,
+        "log_tail": _log_tail(),
+        "note": payload.note[:300],
+    }).encode()
+
+    def call_server():
+        req = urllib.request.Request(
+            f"{LICENSE_SERVER}/api/report-error", data=body,
+            headers={"Content-Type": "application/json", "User-Agent": "MediaDownloadStudio"})
+        with urllib.request.urlopen(req, timeout=LICENSE_SERVER_TIMEOUT) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    try:
+        return await asyncio.to_thread(call_server)
+    except urllib.error.HTTPError as e:
+        try:
+            detail = json.loads(e.read().decode("utf-8")).get("detail", str(e))
+        except Exception:
+            detail = f"HTTP {e.code}"
+        raise HTTPException(status_code=502, detail=detail)
+    except Exception as e:
+        raise HTTPException(status_code=502,
+                            detail=f"Không gửi được báo cáo ({e}). Kiểm tra mạng rồi thử lại.")
 
 
 # ---- Engine yt-dlp ----

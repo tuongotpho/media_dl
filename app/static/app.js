@@ -326,9 +326,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (data.status === 'error') {
                 eventSource.close();
                 if (data.engine_hint) {
-                    handleEngineFailure(data.error);
+                    handleEngineFailure(data.error, data.task_id);
                 } else {
-                    showError(`Lỗi khi tải: ${data.error || 'Unknown error'}`);
+                    showError(`Lỗi khi tải: ${data.error || 'Unknown error'}`, data.task_id);
                 }
                 if (downloadStatusBadge) {
                     downloadStatusBadge.className = 'badge badge-danger';
@@ -416,7 +416,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 actions = '';
             } else {
                 badge = `<span class="hist-badge fail">thất bại</span>`;
-                actions = `<button type="button" class="btn-outline btn-xs js-redo" data-url="${e.url}" title="Thử lại">
+                actions = `<button type="button" class="btn-outline btn-xs js-report" data-id="${e.id}" title="Báo lỗi cho admin">
+                             <i class="fa-solid fa-bug"></i>
+                           </button>
+                           <button type="button" class="btn-outline btn-xs js-redo" data-url="${e.url}" title="Thử lại">
                              <i class="fa-solid fa-rotate-right"></i>
                            </button>`;
             }
@@ -452,6 +455,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchForm.dispatchEvent(new Event('submit'));
             });
         });
+        historyList.querySelectorAll('.js-report').forEach(b => {
+            b.addEventListener('click', () => sendErrorReport({ entry_id: b.dataset.id }, b));
+        });
         historyList.querySelectorAll('.js-del').forEach(b => {
             b.addEventListener('click', async () => {
                 await fetch('/api/history/' + b.dataset.id, { method: 'DELETE' });
@@ -481,9 +487,48 @@ document.addEventListener('DOMContentLoaded', () => {
         updateIdleState();
     }
 
-    function showError(msg) {
+    // ===================== BAO LOI CHO ADMIN =====================
+    const btnReportError = document.getElementById('btn-report-error');
+    let reportableTaskId = null;      // task tai dang loi tren man hinh
+
+    async function sendErrorReport(ref, triggerBtn) {
+        const original = triggerBtn ? triggerBtn.innerHTML : '';
+        if (triggerBtn) {
+            triggerBtn.disabled = true;
+            triggerBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+        }
+        try {
+            const res = await fetch('/api/report-error', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(ref),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Không gửi được');
+            showNotice({ kind: 'success', title: 'Đã gửi báo cáo',
+                         message: 'Admin đã nhận đủ thông tin lỗi, link và gói bản quyền của bạn. Sẽ phản hồi sớm.' });
+            if (triggerBtn) triggerBtn.innerHTML = '<i class="fa-solid fa-check"></i> Đã gửi';
+        } catch (err) {
+            showNotice({ kind: 'error', title: 'Chưa gửi được báo cáo', message: err.message });
+            if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = original; }
+        }
+    }
+
+    if (btnReportError) {
+        btnReportError.addEventListener('click', () => {
+            if (reportableTaskId) sendErrorReport({ task_id: reportableTaskId }, btnReportError);
+        });
+    }
+
+    function showError(msg, taskId) {
         errorMessage.textContent = msg;
         errorBanner.classList.remove('hidden');
+        reportableTaskId = taskId || null;
+        if (btnReportError) {
+            btnReportError.disabled = false;
+            btnReportError.innerHTML = '<i class="fa-solid fa-bug"></i> Báo lỗi cho admin';
+            btnReportError.classList.toggle('hidden', !taskId);
+        }
         updateIdleState();
     }
 
@@ -772,8 +817,8 @@ document.addEventListener('DOMContentLoaded', () => {
         engineNote.className = 'engine-note ' + (kind || '');
     }
 
-    async function handleEngineFailure(rawError) {
-        showError('Tải thất bại — nhiều khả năng do engine đã cũ so với thay đổi mới của trang nguồn. Đang tự động cập nhật...');
+    async function handleEngineFailure(rawError, taskId) {
+        showError('Tải thất bại — nhiều khả năng do engine đã cũ so với thay đổi mới của trang nguồn. Đang tự động cập nhật...', taskId);
         document.querySelector('[data-sidebar-tab="sidebar-about"]')?.click();
 
         for (let i = 0; i < 40; i++) {
@@ -783,15 +828,15 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshEngine();
 
             if (d.pending_restart) {
-                showError(`Đã tự cập nhật engine lên ${d.latest}. Khởi động lại ứng dụng rồi tải lại video này.`);
+                showError(`Đã tự cập nhật engine lên ${d.latest}. Khởi động lại ứng dụng rồi tải lại video này.`, taskId);
                 return;
             }
             if (d.auto_status === 'failed') {
-                showError('Không tự cập nhật được engine. Vào tab Giới Thiệu bấm "Kiểm Tra Cập Nhật", hoặc kiểm tra lại kết nối mạng.');
+                showError('Không tự cập nhật được engine. Vào tab Giới Thiệu bấm "Kiểm Tra Cập Nhật", hoặc kiểm tra lại kết nối mạng.', taskId);
                 return;
             }
             if (d.auto_status === null && i > 2) {
-                showError(`Tải thất bại: ${rawError || ''} — engine đã là bản mới nhất nên nguyên nhân nằm ở chỗ khác (link riêng tư, cần đăng nhập, hoặc video đã bị gỡ).`);
+                showError(`Tải thất bại: ${rawError || ''} — engine đã là bản mới nhất nên nguyên nhân nằm ở chỗ khác (link riêng tư, cần đăng nhập, hoặc video đã bị gỡ).`, taskId);
                 return;
             }
         }
