@@ -124,6 +124,8 @@ def call(path, token, params=None, data=None, files=None, method=None):
 
     req = urllib.request.Request(url, data=body, headers=headers,
                                  method=method or ("POST" if body else "GET"))
+    if method == "DELETE" and body is None:
+        req.data = None
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             return json.loads(r.read().decode("utf-8"))
@@ -339,6 +341,20 @@ def cmd_comment(args, page_id, token):
     print("Da binh luan: %s" % res.get("id", "?"))
 
 
+def cmd_publish(args, page_id, token):
+    """Phat hanh mot bai dang nhap (is_published=false -> true)."""
+    res = call(args.post_id, token, data={"is_published": "true"})
+    ok = res.get("success", res)
+    print("Da phat hanh:", args.post_id if ok else res)
+    print("Xem tai    : https://www.facebook.com/%s" % args.post_id.replace("_", "/posts/"))
+
+
+def cmd_delete(args, page_id, token):
+    """Xoa mot bai dang (nhap hoac da dang)."""
+    res = call(args.post_id, token, method="DELETE")
+    print("Da xoa:", args.post_id if res.get("success") else res)
+
+
 def cmd_posts(args, page_id, token):
     res = call("%s/posts" % page_id, token, params={
         "fields": "id,created_time,message,permalink_url,shares",
@@ -378,6 +394,12 @@ def main():
     p.add_argument("-c", "--caption", help="Chu thich")
     p.add_argument("--draft", action="store_true", help="Luu nhap, khong dang cong khai")
 
+    p = sub.add_parser("publish", help="Phat hanh bai nhap")
+    p.add_argument("-p", "--post-id", required=True)
+
+    p = sub.add_parser("delete", help="Xoa mot bai dang")
+    p.add_argument("-p", "--post-id", required=True)
+
     p = sub.add_parser("comment", help="Binh luan duoi mot bai da dang")
     p.add_argument("-p", "--post-id", required=True, help="ID bai dang (dang <page>_<post>)")
     p.add_argument("-m", "--message", required=True)
@@ -395,6 +417,8 @@ def main():
         "info": cmd_info,
         "post": cmd_post,
         "photo": cmd_photo,
+        "publish": cmd_publish,
+        "delete": cmd_delete,
         "comment": cmd_comment,
         "posts": cmd_posts,
     }
