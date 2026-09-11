@@ -1,4 +1,4 @@
-const DOWNLOAD_URL = "https://github.com/tuongotpho/media_dl/releases/download/v1.0.0/MediaDownloadStudio_v1.0.zip";
+const DOWNLOAD_URL = "https://github.com/tuongotpho/media_dl/releases/download/v1.1/MediaDownloadStudio_v1.1.zip";
 
 document.addEventListener('DOMContentLoaded', () => {
     // Copy STK
